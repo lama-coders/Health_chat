@@ -7,7 +7,13 @@ import requests
 from datetime import datetime
 
 # Configure DeepSeek API
-DEEPSEEK_API_KEY = st.secrets["DEEPSEEK_API_KEY"]
+# With this FAILSAFE version:
+try:
+    DEEPSEEK_API_KEY = st.secrets["DEEPSEEK_API_KEY"]
+except:
+    DEEPSEEK_API_KEY = "sk-c2837b2ab2984cd5a51ef48ec41dd74e"  # Paste key directly here TEMPORARILY
+    st.warning("Using temporary key - configure secrets properly!")
+
 DEEPSEEK_URL = "https://api.deepseek.com/v1/chat/completions"
 
 # =============================
