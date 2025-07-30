@@ -3,7 +3,7 @@ import requests  # Changed from google.generativeai
 from datetime import datetime
 
 # Configure DeepSeek API
-DEEPSEEK_API_KEY = st.secrets["DEEPSEEK_API_KEY"]  # Update secrets.toml
+DEEPSEEK_API_KEY = st.secrets["sk-ed276fb90c7942f99d317171e41c7eb4"]  # Update secrets.toml
 DEEPSEEK_URL = "https://api.deepseek.com/v1/chat/completions"
 
 # =============================
