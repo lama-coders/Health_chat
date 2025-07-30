@@ -1,3 +1,7 @@
+#git add .
+#git commit -m "Trigger redeploy"
+#git push
+
 import streamlit as st
 import requests
 from datetime import datetime
