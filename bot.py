@@ -90,6 +90,9 @@ def get_groq_response(prompt):
         response = requests.post(GROQ_URL, headers=headers, json=payload)
         response.raise_for_status()
         return response.json()['choices'][0]['message']['content']
+    except requests.exceptions.HTTPError as http_err:
+        st.error(f"HTTP error: {response.status_code} — {response.text}")
+        return "Sorry, the API rejected the request."
     except Exception as e:
         st.error(f"Groq API Error: {str(e)}")
         return "Sorry, there was an error."
@@ -101,9 +104,6 @@ if st.sidebar.button("🔍 Test Groq Key"):
     test_result = get_groq_response("Say hello in one sentence.")
     st.sidebar.success("Response from Groq:")
     st.sidebar.code(test_result)
-
-# ... rest of the Streamlit UI logic continues below
-# (unchanged functions: parse_numbered_list, generate_ai_questions, get_ai_response, main_page, etc.)
 
 # =============================
 # Streamlit UI Components
