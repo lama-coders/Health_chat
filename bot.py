@@ -94,37 +94,16 @@ def get_groq_response(prompt):
         st.error(f"Groq API Error: {str(e)}")
         return "Sorry, there was an error."
 
-def parse_numbered_list(text):
-    questions = []
-    for line in text.split('\n'):
-        if line.strip().startswith(('1.', '2.', '3.')):
-            questions.append(line.split('.', 1)[1].strip())
-    return questions[:3] or [
-        "What are your main symptoms?",
-        "How long has this been going on?",
-        "What makes it better or worse?"
-    ]
+# =============================
+# Debug Test Button
+# =============================
+if st.sidebar.button("🔍 Test Groq Key"):
+    test_result = get_groq_response("Say hello in one sentence.")
+    st.sidebar.success("Response from Groq:")
+    st.sidebar.code(test_result)
 
-def generate_ai_questions(specialty, problem):
-    prompt = f"""
-    As a {specialty}, list 3 simple follow-up questions to ask a patient with:
-    "{problem}"
-
-    Format:
-    1. Question
-    2. Question
-    3. Question
-    """
-    return parse_numbered_list(get_groq_response(prompt))
-
-def get_ai_response():
-    prompt = get_specialty_prompt(
-        st.session_state.specialty,
-        st.session_state.user_data,
-        st.session_state.problem,
-        st.session_state.answers
-    )
-    return get_groq_response(prompt)
+# ... rest of the Streamlit UI logic continues below
+# (unchanged functions: parse_numbered_list, generate_ai_questions, get_ai_response, main_page, etc.)
 
 # =============================
 # Streamlit UI Components
