@@ -127,5 +127,124 @@ def get_ai_response():
     return get_groq_response(prompt)
 
 # =============================
-# Remaining Streamlit Code... (Unchanged)
-# You can continue from UI sections like main_page(), nutrition_form(), etc.
+# Streamlit UI Components
+# =============================
+def main_page():
+    st.set_page_config(page_title="AI Health Advisor", page_icon="⚕️", layout="wide")
+    st.title("⚕️ Professional Health Advisor")
+    st.subheader("Consult with AI specialists")
+
+    cols = st.columns(3)
+    specialties = ["Nutritionist", "General Physician", "Mental Health"]
+
+    for i, specialty in enumerate(specialties):
+        with cols[i % 3]:
+            if st.button(f"**{specialty}**", use_container_width=True, key=f"btn_{specialty}"):
+                st.session_state.specialty = specialty
+                st.session_state.question_phase = 0
+                st.rerun()
+
+    st.markdown("---")
+    st.caption("Note: AI provides general guidance only. Not a substitute for professional medical care.")
+
+def nutrition_form():
+    with st.container(border=True):
+        st.subheader("📊 Health Profile")
+        cols = st.columns([1,1,1,1])
+        with cols[0]:
+            weight = st.number_input("Weight (kg)", 30, 200, 70, key="weight")
+        with cols[1]:
+            height = st.number_input("Height (cm)", 100, 250, 170, key="height")
+        with cols[2]:
+            age = st.number_input("Age", 1, 120, 30, key="age")
+        with cols[3]:
+            gender = st.selectbox("Gender", ["Male", "Female", "Other"], key="gender")
+
+        if st.button("Save Profile", type="primary"):
+            bmi = weight / ((height/100) ** 2)
+            st.session_state.user_data = {
+                "weight": weight,
+                "height": height,
+                "age": age,
+                "gender": gender,
+                "bmi": round(bmi, 1),
+                "timestamp": datetime.now().strftime("%Y-%m-%d")
+            }
+            st.success("Profile saved!")
+            st.session_state.question_phase = -1
+
+def problem_input():
+    with st.form("problem_form"):
+        st.subheader(f"Describe your concern to the {st.session_state.specialty}")
+        problem = st.text_area("What would you like to discuss?", placeholder="e.g., I've been experiencing persistent headaches...", height=120)
+
+        if st.form_submit_button("Get Professional Advice", type="primary"):
+            if problem.strip():
+                st.session_state.problem = problem
+                with st.spinner("Preparing relevant questions..."):
+                    st.session_state.questions = generate_ai_questions(st.session_state.specialty, problem)
+                st.session_state.question_phase = 1
+                st.rerun()
+            else:
+                st.warning("Please describe your concern")
+
+def question_phase():
+    current_phase = st.session_state.question_phase
+    question_text = st.session_state.questions[current_phase - 1]
+
+    with st.container(border=True):
+        st.progress(current_phase/3, text=f"Question {current_phase} of 3")
+        st.subheader(question_text)
+        answer = st.text_area("Your response:", height=100, key=f"ans_{current_phase}")
+
+        if st.button("Submit Answer", type="primary"):
+            if answer.strip():
+                st.session_state.answers.append(answer)
+                if current_phase < 3:
+                    st.session_state.question_phase += 1
+                else:
+                    st.session_state.question_phase = 4
+                st.rerun()
+            else:
+                st.warning("Please provide a response")
+
+def show_professional_advice():
+    st.subheader("🧑‍⚕️ Professional Consultation Results")
+    st.caption(f"Specialty: {st.session_state.specialty} | Concern: {st.session_state.problem[:50]}...")
+
+    with st.spinner("Preparing your personalized recommendations..."):
+        advice = get_ai_response()
+
+    st.markdown("---")
+    st.markdown(advice, unsafe_allow_html=True)
+    st.markdown("---")
+
+    cols = st.columns([1,1])
+    with cols[0]:
+        if st.button("🔄 Start New Consultation", use_container_width=True):
+            for key in list(st.session_state.keys()):
+                if key not in ['specialty', 'user_data']:
+                    del st.session_state[key]
+            st.session_state.question_phase = 0
+            st.rerun()
+    with cols[1]:
+        st.download_button("📥 Save Consultation", advice, file_name=f"health_advice_{datetime.now().strftime('%Y%m%d')}.txt", use_container_width=True)
+
+def main():
+    if not st.session_state.specialty:
+        main_page()
+    elif st.session_state.specialty == "Nutritionist" and not st.session_state.user_data:
+        nutrition_form()
+    elif st.session_state.question_phase == -1 or (st.session_state.specialty != "Nutritionist" and not st.session_state.problem):
+        problem_input()
+    elif 1 <= st.session_state.question_phase <= 3:
+        question_phase()
+    elif st.session_state.question_phase == 4:
+        show_professional_advice()
+
+    st.markdown("---")
+    st.caption("**Disclaimer:** This AI provides general information only. It is not medical advice. Consult a healthcare professional for personal medical concerns.")
+
+if __name__ == "__main__":
+    main()
+
