@@ -8,11 +8,10 @@ from datetime import datetime
 # =============================
 try:
     GROQ_API_KEY = st.secrets["GROQ_API_KEY"]
+    st.sidebar.info(f"✅ Key ends with: {GROQ_API_KEY[-6:]}")
 except:
     GROQ_API_KEY = ""
-    st.warning("Using empty Groq key. Please add to secrets!")
-
-GROQ_URL = "https://api.groq.com/openai/v1/chat/completions"
+    st.warning("⚠️ No Groq key found in secrets!")
 GROQ_MODEL = "llama3-8b-8192"  # Free, fast, chat-compatible model
 
 # =============================
