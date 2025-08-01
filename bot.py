@@ -131,11 +131,16 @@ def run_standalone_groq_test():
 # Debug Test Button
 # =============================
 if st.sidebar.button("🔍 Test Groq Key"):
+    st.sidebar.info(f"✅ Key ends with: {GROQ_API_KEY[-6:]}")
     test_result = get_groq_response("Say hello in one sentence.")
     st.sidebar.success("Response from Groq:")
     st.sidebar.code(test_result)
 
-# Optional debug section (visible in main panel for direct testing)
-run_standalone_groq_test()
-
 # ... rest of the Streamlit UI logic continues below
+
+st.title("🩺 Health Chatbot")
+st.markdown("""
+Welcome! Select a medical category and describe your symptoms or health concerns.
+The AI assistant will guide you with questions and offer helpful advice.
+""")
+
