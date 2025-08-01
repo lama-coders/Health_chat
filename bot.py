@@ -121,14 +121,14 @@ def get_groq_response(prompt):
 # =============================
 specialty_title_map = {
     "Nutritionist": "Nutrition Specialist",
-    "General Physician": "General Physcian",
+    "General Physician": "General Physician",
     "Mental Health": "Mental Health Expert",
     "Orthopedic": "Orthopedic Surgeon",
     "Dentist": "Dental Specialist"
 }
 
 if not st.session_state.chat_started:
-    st.title("🩺 AI Hospital")
+    st.title("🩺 Healthcare Chatbot")
     st.subheader("Select a Specialist")
     specialties = list(specialty_title_map.keys())
     cols = st.columns(len(specialties))
@@ -189,7 +189,7 @@ if st.session_state.problem and (st.session_state.specialty != "Nutritionist" or
             if submitted:
                 st.session_state.answers.append(answer)
                 st.session_state.question_phase += 1
-                st.experimental_rerun()
+                st.rerun()
     else:
         st.success("✅ All answers collected. Generating response...")
         prompt = get_specialty_prompt(
@@ -205,5 +205,6 @@ if st.session_state.problem and (st.session_state.specialty != "Nutritionist" or
 if st.button("🔄 Start Over"):
     st.session_state.clear()
     st.rerun()
+
 
 
