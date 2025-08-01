@@ -8,10 +8,11 @@ from datetime import datetime
 # =============================
 try:
     GROQ_API_KEY = st.secrets["GROQ_API_KEY"]
-    st.sidebar.info(f"✅ Key ends with: {GROQ_API_KEY[-6:]}")
 except:
     GROQ_API_KEY = ""
-    st.warning("⚠️ No Groq key found in secrets!")
+    st.warning("Using empty Groq key. Please add to secrets!")
+
+GROQ_URL = "https://api.groq.com/openai/v1/chat/completions"
 GROQ_MODEL = "llama3-8b-8192"  # Free, fast, chat-compatible model
 
 # =============================
@@ -136,11 +137,40 @@ if st.sidebar.button("🔍 Test Groq Key"):
     st.sidebar.success("Response from Groq:")
     st.sidebar.code(test_result)
 
-# ... rest of the Streamlit UI logic continues below
+# Optional debug section (visible in main panel for direct testing)
+run_standalone_groq_test()
 
-st.title("🩺 Health Chatbot")
-st.markdown("""
-Welcome! Select a medical category and describe your symptoms or health concerns.
-The AI assistant will guide you with questions and offer helpful advice.
-""")
+# =============================
+# Full UI Chatbot Logic
+# =============================
+st.title("🩺 AI Health Assistant")
+
+specialties = ["General Physician", "Nutritionist", "Mental Health"]
+st.session_state.specialty = st.selectbox("Select Specialty:", specialties)
+
+st.session_state.problem = st.text_area("Describe your issue:", value=st.session_state.problem)
+
+if st.button("Next ➡️"):
+    st.session_state.question_phase += 1
+    st.session_state.questions = ["What is your age?", "What is your gender?", "Do you have chronic illnesses?", "Are you taking medications?"]
+
+if st.session_state.question_phase > 0:
+    q_index = st.session_state.question_phase - 1
+    if q_index < len(st.session_state.questions):
+        question = st.session_state.questions[q_index]
+        answer = st.text_input(f"{question}", key=f"q_{q_index}")
+        if st.button("Submit Answer"):
+            st.session_state.answers.append(answer)
+            st.session_state.question_phase += 1
+    else:
+        st.success("✅ All answers submitted. Generating response...")
+        prompt = get_specialty_prompt(
+            st.session_state.specialty,
+            st.session_state.user_data,
+            st.session_state.problem,
+            st.session_state.answers
+        )
+        result = get_groq_response(prompt)
+        st.markdown("### 🧠 AI Suggestion")
+        st.markdown(result)
 
