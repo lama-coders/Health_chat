@@ -25,6 +25,7 @@ for key, val in {
     'answers': [],
     'problem': "",
     'profile_collected': False,
+    'chat_started': False,
 }.items():
     if key not in st.session_state:
         st.session_state[key] = val
@@ -72,57 +73,67 @@ def get_groq_response(prompt):
 # =============================
 st.title("🩺 Healthcare Chatbot")
 
-st.subheader("Select a Specialist")
-specialties = ["General Physician", "Nutritionist", "Mental Health", "Orthopedic", "Dentist"]
-cols = st.columns(len(specialties))
-for i, name in enumerate(specialties):
-    if cols[i].button(name):
-        st.session_state.specialty = name
-        st.session_state.question_phase = 0
-        st.session_state.answers = []
-        st.session_state.problem = ""
-        st.session_state.user_data = {}
-        st.session_state.profile_collected = False
+if not st.session_state.chat_started:
+    st.subheader("Select a Specialist")
+    specialties = ["General Physician", "Nutritionist", "Mental Health", "Orthopedic", "Dentist"]
+    cols = st.columns(len(specialties))
+    for i, name in enumerate(specialties):
+        if cols[i].button(name):
+            st.session_state.specialty = name
+            st.session_state.question_phase = 0
+            st.session_state.answers = []
+            st.session_state.problem = ""
+            st.session_state.user_data = {}
+            st.session_state.profile_collected = False
+            st.session_state.chat_started = True
+    st.stop()
 
-if st.session_state.specialty:
-    st.success(f"Selected: {st.session_state.specialty}")
-    st.session_state.problem = st.text_area("📝 Describe your health concern:", value=st.session_state.problem)
+st.success(f"Selected: {st.session_state.specialty}")
 
-    if st.session_state.specialty == "Nutritionist" and not st.session_state.profile_collected:
-        with st.form("profile_form"):
-            age = st.text_input("Age:")
-            weight = st.text_input("Weight (kg):")
-            height = st.text_input("Height (cm):")
-            gender = st.selectbox("Gender:", ["Male", "Female", "Other"])
-            submitted = st.form_submit_button("Submit Profile")
-            if submitted:
-                st.session_state.user_data = {"age": age, "weight": weight, "height": height, "gender": gender}
-                st.session_state.profile_collected = True
-                st.success("Profile submitted.")
+st.session_state.problem = st.text_area("📝 Describe your health concern:", value=st.session_state.problem)
 
-    if st.session_state.problem and (st.session_state.specialty != "Nutritionist" or st.session_state.profile_collected):
-        st.subheader("📋 Follow-up Questions")
-        if not st.session_state.questions:
-            st.session_state.questions = [
-                f"How long have you been experiencing '{st.session_state.problem}' symptoms?",
-                f"Have you consulted a doctor before for '{st.session_state.problem}'?",
-                f"Is the issue affecting your daily activities?"
-            ]
+if st.session_state.specialty == "Nutritionist" and not st.session_state.profile_collected:
+    with st.form("profile_form"):
+        age = st.text_input("Age:")
+        weight = st.text_input("Weight (kg):")
+        height = st.text_input("Height (cm):")
+        gender = st.selectbox("Gender:", ["Male", "Female", "Other"])
+        submitted = st.form_submit_button("Submit Profile")
+        if submitted:
+            st.session_state.user_data = {"age": age, "weight": weight, "height": height, "gender": gender}
+            st.session_state.profile_collected = True
+            st.success("Profile submitted.")
 
-        idx = st.session_state.question_phase
-        if idx < len(st.session_state.questions):
+if st.session_state.problem and (st.session_state.specialty != "Nutritionist" or st.session_state.profile_collected):
+    st.subheader("📋 Follow-up Questions")
+    if not st.session_state.questions:
+        st.session_state.questions = [
+            f"How long have you been experiencing '{st.session_state.problem}' symptoms?",
+            f"Have you consulted a doctor before for '{st.session_state.problem}'?",
+            f"Is the issue affecting your daily activities?"
+        ]
+
+    idx = st.session_state.question_phase
+    if idx < len(st.session_state.questions):
+        with st.form(f"question_form_{idx}"):
             answer = st.text_input(st.session_state.questions[idx], key=f"q_{idx}")
-            if st.button("Submit Answer"):
+            submitted = st.form_submit_button("Submit Answer")
+            if submitted:
                 st.session_state.answers.append(answer)
                 st.session_state.question_phase += 1
-        else:
-            st.success("✅ All answers collected. Generating response...")
-            prompt = get_specialty_prompt(
-                st.session_state.specialty,
-                st.session_state.user_data,
-                st.session_state.problem,
-                st.session_state.answers
-            )
-            result = get_groq_response(prompt)
-            st.markdown("### 🧠 AI Suggestion")
-            st.markdown(result)
+    else:
+        st.success("✅ All answers collected. Generating response...")
+        prompt = get_specialty_prompt(
+            st.session_state.specialty,
+            st.session_state.user_data,
+            st.session_state.problem,
+            st.session_state.answers
+        )
+        result = get_groq_response(prompt)
+        st.markdown("### 🧠 AI Suggestion")
+        st.markdown(result)
+
+if st.button("🔄 Start Over"):
+    for key in ["specialty", "user_data", "question_phase", "questions", "answers", "problem", "profile_collected", "chat_started"]:
+        st.session_state[key] = None if key == "specialty" else {} if isinstance(st.session_state[key], dict) else 0 if isinstance(st.session_state[key], int) else False if isinstance(st.session_state[key], bool) else ""
+    st.experimental_rerun()
