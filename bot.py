@@ -34,13 +34,61 @@ for key, val in {
 # Prompt Engineering
 # =============================
 def get_specialty_prompt(specialty, user_data, problem, answers):
-    return f"""
-    ROLE: Senior {specialty}
-    PATIENT CONCERN: {problem}
-    PATIENT PROFILE: {user_data}
-    RESPONSES: {answers}
+    if specialty == "Nutritionist":
+        return f"""
+        ROLE: Certified Clinical Nutritionist
+        USER PROFILE:
+        - Age: {user_data.get('age')}
+        - Weight: {user_data.get('weight')} kg
+        - Height: {user_data.get('height')} cm
+        - Gender: {user_data.get('gender')}
 
-    Provide helpful guidance and suggestions in plain English.
+        HEALTH CONCERN: {problem}
+        ADDITIONAL INPUT: {answers}
+
+        TASK:
+        - Calculate BMI and classify it
+        - Provide a structured, clear weekly nutrition plan
+        - Include hydration tips, meal timings, and snacks
+        """
+    elif specialty == "General Physician":
+        return f"""
+        ROLE: Experienced General Physician
+        PATIENT COMPLAINT: {problem}
+        RESPONSES: {answers}
+
+        Provide a detailed but simple explanation of possible conditions and suggested next steps including home care and medications.
+        """
+    elif specialty == "Mental Health":
+        return f"""
+        ROLE: Clinical Psychologist
+        CONCERN: {problem}
+        RESPONSES: {answers}
+
+        Deliver empathetic, actionable mental health advice with daily coping tools and therapy suggestions.
+        """
+    elif specialty == "Orthopedic":
+        return f"""
+        ROLE: Senior Orthopedic Surgeon
+        COMPLAINT: {problem}
+        RESPONSES: {answers}
+
+        Give analysis of musculoskeletal symptoms and recommend posture, exercise, or diagnostics needed.
+        """
+    elif specialty == "Dentist":
+        return f"""
+        ROLE: Professional Dental Surgeon
+        DENTAL ISSUE: {problem}
+        RESPONSES: {answers}
+
+        Outline potential dental diagnoses and hygienic practices with cost-effective treatment paths.
+        """
+    return f"""
+    ROLE: Healthcare Expert
+    ISSUE: {problem}
+    ANSWERS: {answers}
+
+    Provide helpful health suggestions.
     """
 
 # =============================
@@ -71,11 +119,18 @@ def get_groq_response(prompt):
 # =============================
 # UI LAYOUT
 # =============================
-st.title("🩺 Healthcare Chatbot")
+specialty_title_map = {
+    "Nutritionist": "Nutrition Specialist",
+    "General Physician": "General Physician",
+    "Mental Health": "Mental Health Expert",
+    "Orthopedic": "Orthopedic Surgeon",
+    "Dentist": "Dental Specialist"
+}
 
 if not st.session_state.chat_started:
+    st.title("🩺 Healthcare Chatbot")
     st.subheader("Select a Specialist")
-    specialties = ["General Physician", "Nutritionist", "Mental Health", "Orthopedic", "Dentist"]
+    specialties = list(specialty_title_map.keys())
     cols = st.columns(len(specialties))
     for i, name in enumerate(specialties):
         if cols[i].button(name):
@@ -88,29 +143,42 @@ if not st.session_state.chat_started:
             st.session_state.chat_started = True
     st.stop()
 
-st.success(f"Selected: {st.session_state.specialty}")
+st.title(f"🩺 {specialty_title_map.get(st.session_state.specialty)}")
 
 st.session_state.problem = st.text_area("📝 Describe your health concern:", value=st.session_state.problem)
 
+# Nutritionist Custom Fields
 if st.session_state.specialty == "Nutritionist" and not st.session_state.profile_collected:
     with st.form("profile_form"):
-        age = st.text_input("Age:")
-        weight = st.text_input("Weight (kg):")
-        height = st.text_input("Height (cm):")
-        gender = st.selectbox("Gender:", ["Male", "Female", "Other"])
+        col1, col2, col3, col4 = st.columns(4)
+        age = col1.text_input("Age")
+        weight = col2.text_input("Weight (kg)")
+        height = col3.text_input("Height (cm)")
+        gender = col4.selectbox("Gender", ["Male", "Female", "Other"])
         submitted = st.form_submit_button("Submit Profile")
         if submitted:
-            st.session_state.user_data = {"age": age, "weight": weight, "height": height, "gender": gender}
+            try:
+                bmi = round(float(weight) / ((float(height)/100)**2), 1)
+            except:
+                bmi = "Invalid"
+            st.session_state.user_data = {
+                "age": age,
+                "weight": weight,
+                "height": height,
+                "gender": gender,
+                "BMI": bmi
+            }
             st.session_state.profile_collected = True
-            st.success("Profile submitted.")
+            st.success(f"Profile submitted. BMI = {bmi}")
+            st.markdown("#### 🧭 Would you like a personalized plan from Nutrition Specialist?")
 
 if st.session_state.problem and (st.session_state.specialty != "Nutritionist" or st.session_state.profile_collected):
     st.subheader("📋 Follow-up Questions")
     if not st.session_state.questions:
         st.session_state.questions = [
-            f"How long have you been experiencing '{st.session_state.problem}' symptoms?",
-            f"Have you consulted a doctor before for '{st.session_state.problem}'?",
-            f"Is the issue affecting your daily activities?"
+            f"How long have you been experiencing '{st.session_state.problem}'?",
+            f"Have you taken any treatment or medication for it?",
+            f"Is the issue affecting your daily life or appetite?"
         ]
 
     idx = st.session_state.question_phase
@@ -121,6 +189,7 @@ if st.session_state.problem and (st.session_state.specialty != "Nutritionist" or
             if submitted:
                 st.session_state.answers.append(answer)
                 st.session_state.question_phase += 1
+                st.experimental_rerun()
     else:
         st.success("✅ All answers collected. Generating response...")
         prompt = get_specialty_prompt(
@@ -131,9 +200,9 @@ if st.session_state.problem and (st.session_state.specialty != "Nutritionist" or
         )
         result = get_groq_response(prompt)
         st.markdown("### 🧠 AI Suggestion")
-        st.markdown(result)
+        st.markdown(result, unsafe_allow_html=True)
 
 if st.button("🔄 Start Over"):
-    for key in ["specialty", "user_data", "question_phase", "questions", "answers", "problem", "profile_collected", "chat_started"]:
-        st.session_state[key] = None if key == "specialty" else {} if isinstance(st.session_state[key], dict) else 0 if isinstance(st.session_state[key], int) else False if isinstance(st.session_state[key], bool) else ""
+    st.session_state.clear()
     st.experimental_rerun()
+
