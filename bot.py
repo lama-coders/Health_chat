@@ -203,7 +203,9 @@ if st.session_state.problem and (st.session_state.specialty != "Nutritionist" or
         st.markdown(result, unsafe_allow_html=True)
 
 if st.button("🔄 Start Over"):
-    st.session_state.clear()
+    for key in ["specialty", "user_data", "question_phase", "questions", "answers", "problem", "profile_collected", "chat_started"]:
+        if key in st.session_state:
+            del st.session_state[key]
     st.rerun()
 
 
