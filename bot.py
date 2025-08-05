@@ -380,17 +380,18 @@ if st.session_state.problem and (st.session_state.specialty != "Nutritionist" or
 
 # Start Over button with improved handling
 if st.button("🔄 Start Fresh", help="Clear all data and start over with this specialty"):
-    specialty = st.session_state.get("specialty", "")
-    st.session_state.question_phase = 0
-    st.session_state.answers = []
-    st.session_state.questions = []
-    st.session_state.problem = ""
-    if specialty == "Nutritionist":
-        st.session_state.user_data = {}
-        st.session_state.profile_collected = False
-        st.session_state.nutritionist_submit_attempted = False
-    # Force immediate rerun
+    # Clear only relevant keys for a true fresh start
+    for key in [
+        "question_phase", "answers", "questions", "problem",
+        "user_data", "profile_collected", "nutritionist_submit_attempted"
+    ]:
+        if key in st.session_state:
+            del st.session_state[key]
     st.rerun()
+
+
+
+
 
 
 
