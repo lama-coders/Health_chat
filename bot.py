@@ -340,12 +340,16 @@ if st.session_state.specialty == "Nutritionist":
             value=st.session_state.problem,
             placeholder="e.g., I want to lose weight, I need a meal plan, I have digestive issues..."
         )
+        if st.session_state.problem:
+            if st.button("Start Answering Questions ➡️"):
+                st.session_state.chat_started = True
+                st.rerun()
 
 else:
     # For all other specialties, show the regular problem input
     st.session_state.problem = st.text_area("📝 Describe your health concern:", value=st.session_state.problem)
 
-if st.session_state.problem and (st.session_state.specialty != "Nutritionist" or st.session_state.profile_collected):
+if st.session_state.problem and (st.session_state.specialty != "Nutritionist" or st.session_state.chat_started):
     st.subheader("📋 Follow-up Questions")
     
     # Generate questions dynamically based on problem and specialty
@@ -403,9 +407,6 @@ if st.button("🔄 Start Fresh", help="Clear all data and start over with this s
     # Use a flag to trigger reset at the top of the script
     st.session_state["trigger_fresh_start"] = True
     st.rerun()
-
-
-
 
 
 
