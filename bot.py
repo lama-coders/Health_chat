@@ -47,16 +47,7 @@ for key, val in {
     if key not in st.session_state:
         st.session_state[key] = val
 
-# Handle fresh start for specialty (single-click reset)
-if st.session_state.get("fresh_start", False):
-    for key in [
-        "question_phase", "answers", "questions", "problem",
-        "user_data", "profile_collected", "nutritionist_submit_attempted"
-    ]:
-        if key in st.session_state:
-            del st.session_state[key]
-    st.session_state["fresh_start"] = False
-    st.rerun()
+
 
 # =============================
 # Prompt Engineering
@@ -390,10 +381,25 @@ if st.session_state.problem and (st.session_state.specialty != "Nutritionist" or
         st.markdown(result, unsafe_allow_html=True)
 
 # Start Over button with improved handling
-if st.button("Generate response", help="Clear all data and start over with this specialty"):
-    st.session_state["fresh_start"] = True
+if st.button("🔄 Start Fresh", help="Clear all data and start over with this specialty"):
+    # Direct reset without flags - ensures single click
+    specialty = st.session_state.get("specialty", "")
+    
+    # Reset common keys for all specialties
+    st.session_state.question_phase = 0
+    st.session_state.answers = []
+    st.session_state.questions = []
+    st.session_state.problem = ""
+    
+    # Reset Nutritionist-specific keys
+    if specialty == "Nutritionist":
+        st.session_state.user_data = {}
+        st.session_state.profile_collected = False
+        if "nutritionist_submit_attempted" in st.session_state:
+            st.session_state.nutritionist_submit_attempted = False
+    
+    # Single rerun to refresh UI
     st.rerun()
-
 
 
 
