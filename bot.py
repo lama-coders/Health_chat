@@ -245,21 +245,22 @@ if st.session_state.problem and (st.session_state.specialty != "Nutritionist" or
         
         # Display current question
         current_question = st.session_state.questions[st.session_state.question_phase]
-        with st.form(f"question_form_{st.session_state.question_phase}"):
-            answer = st.text_input(current_question, key=f"q_{st.session_state.question_phase}")
-            col1, col2 = st.columns([1, 1])
-            with col1:
-                submitted = st.form_submit_button("Submit Answer")
-            with col2:
-                skip_questions = st.form_submit_button("Skip to Results")
-            
-            if submitted and answer.strip():
-                st.session_state.answers.append(answer)
-                st.session_state.question_phase += 1
-                st.rerun()
-            elif submitted and not answer.strip():
-                st.warning("Please provide an answer or skip to results.")
-            elif skip_questions:
+        
+        # Use regular text input without form
+        answer = st.text_input(current_question, key=f"q_{st.session_state.question_phase}", placeholder="Type your answer here...")
+        
+        # User-friendly buttons
+        col1, col2 = st.columns([1, 1])
+        with col1:
+            if st.button("✅ Next Question", key=f"submit_{st.session_state.question_phase}", help="Submit your answer and continue"):
+                if answer.strip():
+                    st.session_state.answers.append(answer)
+                    st.session_state.question_phase += 1
+                    st.rerun()
+                else:
+                    st.warning("Please provide an answer or get your results.")
+        with col2:
+            if st.button("🚀 Get My Results", key=f"skip_{st.session_state.question_phase}", help="Skip remaining questions and get AI advice"):
                 st.session_state.question_phase = max_questions  # Skip to results
                 st.rerun()
     else:
@@ -286,3 +287,4 @@ if st.button("🔄 Start Over"):
     st.session_state.user_data = {}
     st.session_state.profile_collected = False
     st.rerun()
+
