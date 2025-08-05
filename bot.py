@@ -141,6 +141,7 @@ if not st.session_state.chat_started:
             st.session_state.user_data = {}
             st.session_state.profile_collected = False
             st.session_state.chat_started = True
+            st.rerun()
     st.stop()
 
 # Add navigation header with back button
@@ -224,5 +225,3 @@ if st.button("🔄 Start Over"):
     st.session_state.user_data = {}
     st.session_state.profile_collected = False
     st.rerun()
-
-
