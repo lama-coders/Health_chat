@@ -47,6 +47,17 @@ for key, val in {
     if key not in st.session_state:
         st.session_state[key] = val
 
+# Handle fresh start for specialty (single-click reset)
+if st.session_state.get("fresh_start", False):
+    for key in [
+        "question_phase", "answers", "questions", "problem",
+        "user_data", "profile_collected", "nutritionist_submit_attempted"
+    ]:
+        if key in st.session_state:
+            del st.session_state[key]
+    st.session_state["fresh_start"] = False
+    st.rerun()
+
 # =============================
 # Prompt Engineering
 # =============================
@@ -379,15 +390,11 @@ if st.session_state.problem and (st.session_state.specialty != "Nutritionist" or
         st.markdown(result, unsafe_allow_html=True)
 
 # Start Over button with improved handling
-if st.button("🔄 Start Fresh", help="Clear all data and start over with this specialty"):
-    # Clear only relevant keys for a true fresh start
-    for key in [
-        "question_phase", "answers", "questions", "problem",
-        "user_data", "profile_collected", "nutritionist_submit_attempted"
-    ]:
-        if key in st.session_state:
-            del st.session_state[key]
+if st.button("Generate response", help="Clear all data and start over with this specialty"):
+    st.session_state["fresh_start"] = True
     st.rerun()
+
+
 
 
 
