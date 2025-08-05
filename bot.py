@@ -223,10 +223,18 @@ if st.session_state.specialty == "Nutritionist":
         
         # Single-click submit button
         if st.button("🚀 Calculate My Health Profile", help="Calculate BMI and health status"):
-            if age and weight and height and gender != "Select...":
+            # Strip whitespace from all fields
+            age_clean = age.strip()
+            weight_clean = weight.strip()
+            height_clean = height.strip()
+            # Validate all fields are filled and numbers
+            if not (age_clean and weight_clean and height_clean and gender != "Select..."):
+                st.warning("📝 Please fill in all fields to continue.")
+            elif not (age_clean.isdigit() and weight_clean.replace('.', '', 1).isdigit() and height_clean.replace('.', '', 1).isdigit()):
+                st.error("⚠️ Please enter valid numbers for age, weight, and height.")
+            else:
                 try:
-                    bmi = round(float(weight) / ((float(height)/100)**2), 1)
-                    
+                    bmi = round(float(weight_clean) / ((float(height_clean)/100)**2), 1)
                     # BMI interpretation
                     if bmi < 18.5:
                         bmi_category = "Underweight"
@@ -246,9 +254,9 @@ if st.session_state.specialty == "Nutritionist":
                         advice = "Let's work together on a healthy weight management plan."
                     
                     st.session_state.user_data = {
-                        "age": age,
-                        "weight": weight,
-                        "height": height,
+                        "age": age_clean,
+                        "weight": weight_clean,
+                        "height": height_clean,
                         "gender": gender,
                         "BMI": bmi,
                         "bmi_category": bmi_category,
@@ -258,8 +266,8 @@ if st.session_state.specialty == "Nutritionist":
                     st.rerun()
                 except:
                     st.error("⚠️ Please enter valid numbers for age, weight, and height.")
-            else:
-                st.warning("📝 Please fill in all fields to continue.")
+        else:
+            st.warning("📝 Please fill in all fields to continue.")
     
     else:
         # Show BMI results after profile is collected
@@ -355,4 +363,5 @@ if st.button("🔄 Start Fresh", help="Clear all data and start over with this s
     st.session_state.questions = []
     # Force immediate rerun
     st.rerun()
+
 
