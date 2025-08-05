@@ -193,6 +193,7 @@ with col1:
 with col2:
     if st.button("🏠 Main Menu", help="Go back to specialty selection"):
         # Reset all session state to go back to main menu
+        # Only reset profile_collected and user_data when returning to main menu
         for key in ["specialty", "user_data", "question_phase", "questions", "answers", "problem", "profile_collected", "chat_started"]:
             if key in st.session_state:
                 del st.session_state[key]
@@ -222,7 +223,8 @@ if st.session_state.specialty == "Nutritionist":
             gender = st.selectbox("👤 Gender", ["Select...", "Male", "Female", "Other"])
         
         # Single-click submit button
-        if st.button("🚀 Calculate My Health Profile", help="Calculate BMI and health status"):
+        calculate_clicked = st.button("🚀 Calculate My Health Profile", help="Calculate BMI and health status")
+        if calculate_clicked:
             # Strip whitespace from all fields
             age_clean = age.strip()
             weight_clean = weight.strip()
@@ -252,7 +254,6 @@ if st.session_state.specialty == "Nutritionist":
                         bmi_category = "Obese"
                         bmi_color = "red"
                         advice = "Let's work together on a healthy weight management plan."
-                    
                     st.session_state.user_data = {
                         "age": age_clean,
                         "weight": weight_clean,
@@ -266,8 +267,9 @@ if st.session_state.specialty == "Nutritionist":
                     st.rerun()
                 except:
                     st.error("⚠️ Please enter valid numbers for age, weight, and height.")
-        else:
-            st.warning("📝 Please fill in all fields to continue.")
+        # No warning or error outside the button logic!
+
+
     
     else:
         # Show BMI results after profile is collected
@@ -363,5 +365,8 @@ if st.button("🔄 Start Fresh", help="Clear all data and start over with this s
     st.session_state.questions = []
     # Force immediate rerun
     st.rerun()
+
+
+
 
 
