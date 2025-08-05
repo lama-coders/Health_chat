@@ -222,52 +222,58 @@ if st.session_state.specialty == "Nutritionist":
             height = st.text_input("📏 Height (cm)", placeholder="e.g., 175")
             gender = st.selectbox("👤 Gender", ["Select...", "Male", "Female", "Other"])
         
-        # Single-click submit button
+        # Improved single-click submit button with validation flags
+        if 'nutritionist_submit_attempted' not in st.session_state:
+            st.session_state.nutritionist_submit_attempted = False
         calculate_clicked = st.button("🚀 Calculate My Health Profile", help="Calculate BMI and health status")
         if calculate_clicked:
-            # Strip whitespace from all fields
+            st.session_state.nutritionist_submit_attempted = True
+        if st.session_state.nutritionist_submit_attempted:
             age_clean = age.strip()
             weight_clean = weight.strip()
             height_clean = height.strip()
-            # Validate all fields are filled and numbers
             if not (age_clean and weight_clean and height_clean and gender != "Select..."):
                 st.warning("📝 Please fill in all fields to continue.")
-            elif not (age_clean.isdigit() and weight_clean.replace('.', '', 1).isdigit() and height_clean.replace('.', '', 1).isdigit()):
-                st.error("⚠️ Please enter valid numbers for age, weight, and height.")
             else:
                 try:
-                    bmi = round(float(weight_clean) / ((float(height_clean)/100)**2), 1)
-                    # BMI interpretation
-                    if bmi < 18.5:
-                        bmi_category = "Underweight"
-                        bmi_color = "blue"
-                        advice = "You may need to gain some healthy weight."
-                    elif 18.5 <= bmi < 25:
-                        bmi_category = "Normal Weight"
-                        bmi_color = "green"
-                        advice = "Great! You're in the healthy weight range."
-                    elif 25 <= bmi < 30:
-                        bmi_category = "Overweight"
-                        bmi_color = "orange"
-                        advice = "Consider a balanced diet and regular exercise."
-                    else:
-                        bmi_category = "Obese"
-                        bmi_color = "red"
-                        advice = "Let's work together on a healthy weight management plan."
-                    st.session_state.user_data = {
-                        "age": age_clean,
-                        "weight": weight_clean,
-                        "height": height_clean,
-                        "gender": gender,
-                        "BMI": bmi,
-                        "bmi_category": bmi_category,
-                        "health_advice": advice
-                    }
-                    st.session_state.profile_collected = True
-                    st.rerun()
-                except:
+                    age_val = int(age_clean)
+                    weight_val = float(weight_clean)
+                    height_val = float(height_clean)
+                except ValueError:
                     st.error("⚠️ Please enter valid numbers for age, weight, and height.")
-        # No warning or error outside the button logic!
+                else:
+                    try:
+                        bmi = round(weight_val / ((height_val/100)**2), 1)
+                        if bmi < 18.5:
+                            bmi_category = "Underweight"
+                            bmi_color = "blue"
+                            advice = "You may need to gain some healthy weight."
+                        elif 18.5 <= bmi < 25:
+                            bmi_category = "Normal Weight"
+                            bmi_color = "green"
+                            advice = "Great! You're in the healthy weight range."
+                        elif 25 <= bmi < 30:
+                            bmi_category = "Overweight"
+                            bmi_color = "orange"
+                            advice = "Consider a balanced diet and regular exercise."
+                        else:
+                            bmi_category = "Obese"
+                            bmi_color = "red"
+                            advice = "Let's work together on a healthy weight management plan."
+                        st.session_state.user_data = {
+                            "age": age_val,
+                            "weight": weight_val,
+                            "height": height_val,
+                            "gender": gender,
+                            "BMI": bmi,
+                            "bmi_category": bmi_category,
+                            "health_advice": advice
+                        }
+                        st.session_state.profile_collected = True
+                        st.session_state.nutritionist_submit_attempted = False
+                        st.rerun()
+                    except Exception:
+                        st.error("⚠️ Please enter valid numbers for age, weight, and height.")
 
 
     
@@ -335,13 +341,15 @@ if st.session_state.problem and (st.session_state.specialty != "Nutritionist" or
                 if answer.strip():
                     st.session_state.answers.append(answer)
                     st.session_state.question_phase += 1
-                    st.rerun()
+                    st.session_state.question_advance_rerun = True
                 else:
                     st.warning("Please provide an answer or get your results.")
         with col2:
             if st.button("🚀 Get My Results", key=f"skip_{st.session_state.question_phase}", help="Skip remaining questions and get AI advice"):
-                st.session_state.question_phase = max_questions  # Skip to results
-                st.rerun()
+                st.session_state.question_phase = max_questions
+                st.session_state.question_advance_rerun = True
+        if st.session_state.question_advance_rerun:
+            st.rerun()
     else:
         st.success("✅ Generating personalized response...")
         prompt = get_specialty_prompt(
@@ -365,6 +373,8 @@ if st.button("🔄 Start Fresh", help="Clear all data and start over with this s
     st.session_state.questions = []
     # Force immediate rerun
     st.rerun()
+
+
 
 
 
