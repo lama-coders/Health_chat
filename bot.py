@@ -348,7 +348,8 @@ if st.session_state.problem and (st.session_state.specialty != "Nutritionist" or
             if st.button("🚀 Get My Results", key=f"skip_{st.session_state.question_phase}", help="Skip remaining questions and get AI advice"):
                 st.session_state.question_phase = max_questions
                 st.session_state.question_advance_rerun = True
-        if st.session_state.question_advance_rerun:
+        if st.session_state.get("question_advance_rerun", False):
+            st.session_state.question_advance_rerun = False  # Reset after rerun
             st.rerun()
     else:
         st.success("✅ Generating personalized response...")
@@ -373,6 +374,8 @@ if st.button("🔄 Start Fresh", help="Clear all data and start over with this s
     st.session_state.questions = []
     # Force immediate rerun
     st.rerun()
+
+
 
 
 
