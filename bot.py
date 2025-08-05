@@ -51,9 +51,9 @@ def get_specialty_prompt(specialty, user_data, problem, answers):
         - Provide a structured, clear weekly nutrition plan
         - Include hydration tips, meal timings, and snacks
         """
-    elif specialty == "General Physician":
+    elif specialty == "Physician":
         return f"""
-        ROLE: Experienced General Physician
+        ROLE: Experienced Physician
         PATIENT COMPLAINT: {problem}
         RESPONSES: {answers}
 
@@ -92,6 +92,48 @@ def get_specialty_prompt(specialty, user_data, problem, answers):
     """
 
 # =============================
+# Dynamic Question Generation
+# =============================
+def generate_follow_up_question(specialty, problem, previous_answers, question_number):
+    """Generate a relevant follow-up question using LLM based on the problem and specialty"""
+    prompt = f"""
+    You are a {specialty} assistant. A patient has described their problem as: "{problem}"
+    
+    Previous answers given: {previous_answers if previous_answers else "None yet"}
+    
+    Generate ONE specific, relevant follow-up question (question #{question_number}) that would help you better understand their condition and provide better advice. 
+    
+    The question should be:
+    - Directly related to their problem
+    - Professional and empathetic
+    - Specific to your specialty area
+    - Help gather important diagnostic/assessment information
+    
+    Return ONLY the question text, nothing else.
+    """
+    
+    headers = {
+        "Authorization": f"Bearer {GROQ_API_KEY}",
+        "Content-Type": "application/json"
+    }
+    payload = {
+        "model": GROQ_MODEL,
+        "messages": [
+            {"role": "system", "content": "You are a helpful medical assistant that generates relevant follow-up questions."},
+            {"role": "user", "content": prompt}
+        ],
+        "temperature": 0.7,
+        "max_tokens": 150
+    }
+    try:
+        r = requests.post(GROQ_URL, headers=headers, json=payload)
+        r.raise_for_status()
+        return r.json()['choices'][0]['message']['content'].strip()
+    except Exception as e:
+        st.error(f"Error generating question: {str(e)}")
+        return f"Can you tell me more about your {problem.lower()}?"
+
+# =============================
 # Groq API Integration
 # =============================
 def get_groq_response(prompt):
@@ -121,7 +163,7 @@ def get_groq_response(prompt):
 # =============================
 specialty_title_map = {
     "Nutritionist": "Nutrition Specialist",
-    "General Physician": "General Physician",
+    "Physician": "Physician",
     "Mental Health": "Mental Health Expert",
     "Orthopedic": "Orthopedic Surgeon",
     "Dentist": "Dental Specialist"
@@ -185,24 +227,43 @@ if st.session_state.specialty == "Nutritionist" and not st.session_state.profile
 
 if st.session_state.problem and (st.session_state.specialty != "Nutritionist" or st.session_state.profile_collected):
     st.subheader("📋 Follow-up Questions")
-    if not st.session_state.questions:
-        st.session_state.questions = [
-            f"How long have you been experiencing '{st.session_state.problem}'?",
-            f"Have you taken any treatment or medication for it?",
-            f"Is the issue affecting your daily life or appetite?"
-        ]
-
-    idx = st.session_state.question_phase
-    if idx < len(st.session_state.questions):
-        with st.form(f"question_form_{idx}"):
-            answer = st.text_input(st.session_state.questions[idx], key=f"q_{idx}")
-            submitted = st.form_submit_button("Submit Answer")
-            if submitted:
+    
+    # Generate questions dynamically based on problem and specialty
+    max_questions = 3  # Limit to 3 questions for better UX
+    
+    if st.session_state.question_phase < max_questions:
+        # Generate current question dynamically
+        if st.session_state.question_phase >= len(st.session_state.questions):
+            with st.spinner("Generating relevant question..."):
+                new_question = generate_follow_up_question(
+                    st.session_state.specialty,
+                    st.session_state.problem,
+                    st.session_state.answers,
+                    st.session_state.question_phase + 1
+                )
+                st.session_state.questions.append(new_question)
+        
+        # Display current question
+        current_question = st.session_state.questions[st.session_state.question_phase]
+        with st.form(f"question_form_{st.session_state.question_phase}"):
+            answer = st.text_input(current_question, key=f"q_{st.session_state.question_phase}")
+            col1, col2 = st.columns([1, 1])
+            with col1:
+                submitted = st.form_submit_button("Submit Answer")
+            with col2:
+                skip_questions = st.form_submit_button("Skip to Results")
+            
+            if submitted and answer.strip():
                 st.session_state.answers.append(answer)
                 st.session_state.question_phase += 1
                 st.rerun()
+            elif submitted and not answer.strip():
+                st.warning("Please provide an answer or skip to results.")
+            elif skip_questions:
+                st.session_state.question_phase = max_questions  # Skip to results
+                st.rerun()
     else:
-        st.success("✅ All answers collected. Generating response...")
+        st.success("✅ Generating personalized response...")
         prompt = get_specialty_prompt(
             st.session_state.specialty,
             st.session_state.user_data,
