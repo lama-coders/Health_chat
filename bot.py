@@ -198,32 +198,101 @@ with col2:
                 del st.session_state[key]
         st.rerun()
 
-st.session_state.problem = st.text_area("📝 Describe your health concern:", value=st.session_state.problem)
+# Special handling for Nutritionist specialty
+if st.session_state.specialty == "Nutritionist":
+    if not st.session_state.profile_collected:
+        # Friendly welcome message for Nutritionist
+        st.markdown("""
+        ### 🌟 Hey there! Welcome to your Nutrition Journey! 🌱
+        
+        Before we dive into your health concerns, let's calculate your **perfect weight range** and understand your current health status better! 
+        
+        This will help me provide you with the most personalized nutrition advice. 🎯
+        """)
+        
+        st.markdown("#### 📋 Please fill in your basic information:")
+        
+        # Profile collection with better UX
+        col1, col2 = st.columns(2)
+        with col1:
+            age = st.text_input("🎂 Age (years)", placeholder="e.g., 25")
+            weight = st.text_input("⚖️ Current Weight (kg)", placeholder="e.g., 70")
+        with col2:
+            height = st.text_input("📏 Height (cm)", placeholder="e.g., 175")
+            gender = st.selectbox("👤 Gender", ["Select...", "Male", "Female", "Other"])
+        
+        # Single-click submit button
+        if st.button("🚀 Calculate My Health Profile", help="Calculate BMI and health status"):
+            if age and weight and height and gender != "Select...":
+                try:
+                    bmi = round(float(weight) / ((float(height)/100)**2), 1)
+                    
+                    # BMI interpretation
+                    if bmi < 18.5:
+                        bmi_category = "Underweight"
+                        bmi_color = "blue"
+                        advice = "You may need to gain some healthy weight."
+                    elif 18.5 <= bmi < 25:
+                        bmi_category = "Normal Weight"
+                        bmi_color = "green"
+                        advice = "Great! You're in the healthy weight range."
+                    elif 25 <= bmi < 30:
+                        bmi_category = "Overweight"
+                        bmi_color = "orange"
+                        advice = "Consider a balanced diet and regular exercise."
+                    else:
+                        bmi_category = "Obese"
+                        bmi_color = "red"
+                        advice = "Let's work together on a healthy weight management plan."
+                    
+                    st.session_state.user_data = {
+                        "age": age,
+                        "weight": weight,
+                        "height": height,
+                        "gender": gender,
+                        "BMI": bmi,
+                        "bmi_category": bmi_category,
+                        "health_advice": advice
+                    }
+                    st.session_state.profile_collected = True
+                    st.rerun()
+                except:
+                    st.error("⚠️ Please enter valid numbers for age, weight, and height.")
+            else:
+                st.warning("📝 Please fill in all fields to continue.")
+    
+    else:
+        # Show BMI results after profile is collected
+        st.markdown("### 🎉 Your Health Profile Results")
+        
+        col1, col2, col3 = st.columns(3)
+        with col1:
+            st.metric("⚖️ BMI", f"{st.session_state.user_data['BMI']}")
+        with col2:
+            st.metric("🏅 Category", st.session_state.user_data['bmi_category'])
+        with col3:
+            st.metric("🎂 Age", f"{st.session_state.user_data['age']} years")
+        
+        # Health advice based on BMI
+        bmi_category = st.session_state.user_data['bmi_category']
+        if bmi_category == "Normal Weight":
+            st.success(f"✅ {st.session_state.user_data['health_advice']}")
+        elif bmi_category in ["Underweight", "Overweight"]:
+            st.warning(f"⚠️ {st.session_state.user_data['health_advice']}")
+        else:
+            st.info(f"💪 {st.session_state.user_data['health_advice']}")
+        
+        st.markdown("---")
+        st.markdown("### 📝 Now, tell me about your nutrition concerns:")
+        st.session_state.problem = st.text_area(
+            "🍎 What would you like help with today?", 
+            value=st.session_state.problem,
+            placeholder="e.g., I want to lose weight, I need a meal plan, I have digestive issues..."
+        )
 
-# Nutritionist Custom Fields
-if st.session_state.specialty == "Nutritionist" and not st.session_state.profile_collected:
-    with st.form("profile_form"):
-        col1, col2, col3, col4 = st.columns(4)
-        age = col1.text_input("Age")
-        weight = col2.text_input("Weight (kg)")
-        height = col3.text_input("Height (cm)")
-        gender = col4.selectbox("Gender", ["Male", "Female", "Other"])
-        submitted = st.form_submit_button("Submit Profile")
-        if submitted:
-            try:
-                bmi = round(float(weight) / ((float(height)/100)**2), 1)
-            except:
-                bmi = "Invalid"
-            st.session_state.user_data = {
-                "age": age,
-                "weight": weight,
-                "height": height,
-                "gender": gender,
-                "BMI": bmi
-            }
-            st.session_state.profile_collected = True
-            st.success(f"Profile submitted. BMI = {bmi}")
-            st.markdown("#### 🧭 Would you like a personalized plan from Nutrition Specialist?")
+else:
+    # For all other specialties, show the regular problem input
+    st.session_state.problem = st.text_area("📝 Describe your health concern:", value=st.session_state.problem)
 
 if st.session_state.problem and (st.session_state.specialty != "Nutritionist" or st.session_state.profile_collected):
     st.subheader("📋 Follow-up Questions")
@@ -286,3 +355,4 @@ if st.button("🔄 Start Fresh", help="Clear all data and start over with this s
     st.session_state.questions = []
     # Force immediate rerun
     st.rerun()
+
