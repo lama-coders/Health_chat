@@ -34,6 +34,26 @@ if st.session_state.get("reset_app", False):
         st.session_state[key] = val
     st.session_state["reset_app"] = False
 
+# Handle fresh start for specialty (single-click reset)
+if st.session_state.get("trigger_fresh_start", False):
+    specialty = st.session_state.get("specialty", "")
+    
+    # Reset common keys for all specialties
+    st.session_state.question_phase = 0
+    st.session_state.answers = []
+    st.session_state.questions = []
+    st.session_state.problem = ""
+    
+    # Reset Nutritionist-specific keys
+    if specialty == "Nutritionist":
+        st.session_state.user_data = {}
+        st.session_state.profile_collected = False
+        if "nutritionist_submit_attempted" in st.session_state:
+            st.session_state.nutritionist_submit_attempted = False
+    
+    # Clear the trigger flag
+    st.session_state["trigger_fresh_start"] = False
+
 for key, val in {
     'specialty': None,
     'user_data': {},
@@ -46,8 +66,6 @@ for key, val in {
 }.items():
     if key not in st.session_state:
         st.session_state[key] = val
-
-
 
 # =============================
 # Prompt Engineering
@@ -382,23 +400,8 @@ if st.session_state.problem and (st.session_state.specialty != "Nutritionist" or
 
 # Start Over button with improved handling
 if st.button("🔄 Start Fresh", help="Clear all data and start over with this specialty"):
-    # Direct reset without flags - ensures single click
-    specialty = st.session_state.get("specialty", "")
-    
-    # Reset common keys for all specialties
-    st.session_state.question_phase = 0
-    st.session_state.answers = []
-    st.session_state.questions = []
-    st.session_state.problem = ""
-    
-    # Reset Nutritionist-specific keys
-    if specialty == "Nutritionist":
-        st.session_state.user_data = {}
-        st.session_state.profile_collected = False
-        if "nutritionist_submit_attempted" in st.session_state:
-            st.session_state.nutritionist_submit_attempted = False
-    
-    # Single rerun to refresh UI
+    # Use a flag to trigger reset at the top of the script
+    st.session_state["trigger_fresh_start"] = True
     st.rerun()
 
 
