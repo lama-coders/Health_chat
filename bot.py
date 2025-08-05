@@ -143,7 +143,17 @@ if not st.session_state.chat_started:
             st.session_state.chat_started = True
     st.stop()
 
-st.title(f"🩺 {specialty_title_map.get(st.session_state.specialty)}")
+# Add navigation header with back button
+col1, col2 = st.columns([4, 1])
+with col1:
+    st.title(f"🩺 {specialty_title_map.get(st.session_state.specialty)}")
+with col2:
+    if st.button("🏠 Main Menu", help="Go back to specialty selection"):
+        # Reset all session state to go back to main menu
+        for key in ["specialty", "user_data", "question_phase", "questions", "answers", "problem", "profile_collected", "chat_started"]:
+            if key in st.session_state:
+                del st.session_state[key]
+        st.rerun()
 
 st.session_state.problem = st.text_area("📝 Describe your health concern:", value=st.session_state.problem)
 
