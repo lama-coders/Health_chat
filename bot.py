@@ -18,7 +18,7 @@ GROQ_MODEL = "llama3-8b-8192"
 # SESSION STATE INIT
 # =============================
 # Handle app reset for a true one-click Main Menu experience
-if st.session_state.get("reset_app", False):
+if st.session_state.get("reset_app", False): 
     st.session_state.clear()
     # Reinitialize keys after clearing
     for key, val in {
@@ -380,17 +380,17 @@ if st.session_state.problem and (st.session_state.specialty != "Nutritionist" or
 
 # Start Over button with improved handling
 if st.button("🔄 Start Fresh", help="Clear all data and start over with this specialty"):
-    # Use a more reliable reset approach
+    specialty = st.session_state.get("specialty", "")
     st.session_state.question_phase = 0
     st.session_state.answers = []
-    st.session_state.problem = ""
-    st.session_state.user_data = {}
-    st.session_state.profile_collected = False
     st.session_state.questions = []
+    st.session_state.problem = ""
+    if specialty == "Nutritionist":
+        st.session_state.user_data = {}
+        st.session_state.profile_collected = False
+        st.session_state.nutritionist_submit_attempted = False
     # Force immediate rerun
     st.rerun()
-
-
 
 
 
