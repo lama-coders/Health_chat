@@ -17,6 +17,23 @@ GROQ_MODEL = "llama3-8b-8192"
 # =============================
 # SESSION STATE INIT
 # =============================
+# Handle app reset for a true one-click Main Menu experience
+if st.session_state.get("reset_app", False):
+    st.session_state.clear()
+    # Reinitialize keys after clearing
+    for key, val in {
+        'specialty': None,
+        'user_data': {},
+        'question_phase': 0,
+        'questions': [],
+        'answers': [],
+        'problem': "",
+        'profile_collected': False,
+        'chat_started': False,
+    }.items():
+        st.session_state[key] = val
+    st.session_state["reset_app"] = False
+
 for key, val in {
     'specialty': None,
     'user_data': {},
@@ -192,11 +209,9 @@ with col1:
     st.title(f"🩺 {specialty_title_map.get(st.session_state.specialty)}")
 with col2:
     if st.button("🏠 Main Menu", help="Go back to specialty selection"):
-        # Reset all session state to go back to main menu
-        # Only reset profile_collected and user_data when returning to main menu
-        for key in ["specialty", "user_data", "question_phase", "questions", "answers", "problem", "profile_collected", "chat_started"]:
-            if key in st.session_state:
-                del st.session_state[key]
+        # Use a dedicated reset flag to guarantee a single-click reset
+        st.session_state.clear()
+        st.session_state["reset_app"] = True
         st.rerun()
 
 # Special handling for Nutritionist specialty
@@ -374,6 +389,7 @@ if st.button("🔄 Start Fresh", help="Clear all data and start over with this s
     st.session_state.questions = []
     # Force immediate rerun
     st.rerun()
+
 
 
 
