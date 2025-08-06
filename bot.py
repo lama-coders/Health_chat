@@ -29,7 +29,6 @@ if st.session_state.get("reset_app", False):
         'questions': [],
         'answers': [],
         'problem': "",
-        'profile_collected': False,
         'chat_started': False,
     }.items():
         st.session_state[key] = val
@@ -45,13 +44,6 @@ if st.session_state.get("trigger_fresh_start", False):
     st.session_state.questions = []
     st.session_state.problem = ""
     
-    # Reset Nutritionist-specific keys
-    if specialty == "Nutritionist":
-        st.session_state.user_data = {}
-        st.session_state.profile_collected = False
-        if "nutritionist_submit_attempted" in st.session_state:
-            st.session_state.nutritionist_submit_attempted = False
-    
     # Clear the trigger flag
     st.session_state["trigger_fresh_start"] = False
 
@@ -62,7 +54,6 @@ for key, val in {
     'questions': [],
     'answers': [],
     'problem': "",
-    'profile_collected': False,
     'chat_started': False,
 }.items():
     if key not in st.session_state:
@@ -94,12 +85,6 @@ def get_specialty_prompt(specialty, user_data, problem, answers):
     if specialty == "Nutritionist":
         return f"""
         ROLE: Certified Clinical Nutritionist
-        USER PROFILE:
-        - Age: {user_data.get('age')}
-        - Weight: {user_data.get('weight')} kg
-        - Height: {user_data.get('height')} cm
-        - Gender: {user_data.get('gender')}
-
         HEALTH CONCERN: {problem}
         ADDITIONAL INPUT: {answers}
 
@@ -236,7 +221,6 @@ if not st.session_state.chat_started:
             st.session_state.answers = []
             st.session_state.problem = ""
             st.session_state.user_data = {}
-            st.session_state.profile_collected = False
             st.session_state.chat_started = True
             st.rerun()
     st.stop()
@@ -252,24 +236,10 @@ with col2:
         st.session_state["reset_app"] = True
         st.rerun()
 
-# --- DEFAULT CONSULTATION UI ---
-st.markdown("### 📝 Your Health Concern")
-problem_label = "🩺 Describe your health concern:"
-problem_placeholder = "e.g., I have a toothache, I've been having chest pains..."
+# Show problem input for all specialties
+st.session_state.problem = st.text_area("📝 Describe your health concern:", value=st.session_state.problem)
 
-st.text_area(
-    problem_label,
-    placeholder=problem_placeholder,
-    key="problem",
-    disabled=st.session_state.chat_started
-)
-
-if not st.session_state.chat_started:
-    if st.session_state.problem:
-        if st.button("🤖 Get AI Consultation"):
-            st.session_state.chat_started = True
-            st.rerun()
-else:
+if st.session_state.problem:
     st.subheader("📋 Follow-up Questions")
     
     # Generate questions dynamically based on problem and specialty
@@ -345,8 +315,9 @@ else:
                 content = lines[1].strip() if len(lines) > 1 else ""
                 with st.expander(f"*{title}*", expanded=True):
                     st.markdown(content, unsafe_allow_html=True)
-        
-        # Start Over button with improved handling
-        if st.button("🔄 Start a New Consultation", key="start_new_consultation"):
-            st.session_state.trigger_fresh_start = True
-            st.rerun()
+
+# Start Over button with improved handling
+if st.button("🔄 Start Fresh", help="Clear all data and start over with this specialty"):
+    # Use a flag to trigger reset at the top of the script
+    st.session_state["trigger_fresh_start"] = True
+    st.rerun()
