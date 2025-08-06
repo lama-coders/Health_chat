@@ -393,23 +393,38 @@ if st.session_state.problem and (st.session_state.specialty != "Nutritionist" or
         # Use regular text input without form
         answer = st.text_input(current_question, key=f"q_{st.session_state.question_phase}", placeholder="Type your answer here...")
         
-        # User-friendly buttons
-        col1, col2 = st.columns([1, 1])
+        # --- Button Logic ---
+        # We use a two-button system: one to submit the current answer and move to the next question,
+        # and another to finalize the process and get the AI suggestion.
+
+        # --- Button Logic ---
+        # A clear, three-button system for a better user experience.
+
+        col1, col2, col3 = st.columns([2, 2, 1])
+
         with col1:
-            if st.button("✅ Next Question", key=f"submit_{st.session_state.question_phase}", help="Submit your answer and continue"):
+            if st.button("✅ Submit & Next Question", key=f"submit_{st.session_state.question_phase}"):
                 if answer.strip():
                     st.session_state.answers.append(answer)
                     st.session_state.question_phase += 1
-                    st.session_state.question_advance_rerun = True
+                    st.rerun()
                 else:
-                    st.warning("Please provide an answer or get your results.")
+                    st.warning("Please provide an answer before proceeding.")
+
         with col2:
-            if st.button("🚀 Get My Results", key=f"skip_{st.session_state.question_phase}", help="Skip remaining questions and get AI advice"):
-                st.session_state.question_phase = max_questions
-                st.session_state.question_advance_rerun = True
-        if st.session_state.get("question_advance_rerun", False):
-            st.session_state.question_advance_rerun = False  # Reset after rerun
-            st.rerun()
+            # Show the 'Get Suggestion' button only after the first question is answered.
+            if len(st.session_state.answers) > 0:
+                if st.button("💡 Get AI Suggestion", help="Finish asking questions and get the AI's advice."):
+                    # If there's a pending answer in the text box, add it before getting results.
+                    if answer.strip() and len(st.session_state.answers) == st.session_state.question_phase:
+                        st.session_state.answers.append(answer)
+                    st.session_state.question_phase = max_questions # End the question phase
+                    st.rerun()
+
+        with col3:
+            if st.button("🔄", help="Start Over"):
+                st.session_state.trigger_fresh_start = True
+                st.rerun()
     else:
         st.success("✅ Generating personalized response...")
         prompt = get_specialty_prompt(
@@ -445,15 +460,6 @@ if st.session_state.problem and (st.session_state.specialty != "Nutritionist" or
                 content = lines[1].strip() if len(lines) > 1 else ""
                 with st.expander(f"*{title}*", expanded=True):
                     st.markdown(content, unsafe_allow_html=True)
-
-# Get New Consultation button with improved handling
-if st.button("🤖 Get New AI Consultation", help="Start a fresh consultation with this specialist"):
-    # Use a flag to trigger reset at the top of the script
-    st.session_state["trigger_fresh_start"] = True
-    st.rerun()
-
-
-
 
 
 
