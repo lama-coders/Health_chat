@@ -60,73 +60,126 @@ for key, val in {
         st.session_state[key] = val
 
 # =============================
-# Prompt Engineering
+# Enhanced Prompt Engineering
 # =============================
 def get_specialty_prompt(specialty, user_data, problem, answers):
-    # Base instructions for a structured, professional response
+    # Enhanced base instructions for detailed, professional responses
     base_task = """
     TASK:
-    Provide a professional, personalized assessment based on the user's problem and answers. 
-    Your response MUST be structured with the following markdown headings:
+    As a healthcare professional, provide a comprehensive, personalized assessment based on the user's problem and answers. 
+    Your response MUST be structured with the following markdown headings and include the specified details:
 
     ### 📝 Initial Assessment
-    (Provide a summary of the problem based on the user's input.)
+    - Provide a detailed clinical summary of the problem based on the user's input
+    - Include potential underlying causes and risk factors
+    - Mention relevant clinical observations based on the information provided
 
-    ### 💡 Recommendations
-    (Offer clear, actionable suggestions, home care, or lifestyle advice. Use bullet points.)
+    ### 💡 Professional Recommendations
+    - Offer 3-5 specific, evidence-based recommendations
+    - Include lifestyle modifications, home care, and preventive measures
+    - Provide clear rationales for each recommendation
+    - Use bullet points for readability
 
-    ### 💊 Suggested Plan
-    (Outline a step-by-step plan, which could include medications, exercises, or a nutrition plan. Be specific.)
+    ### 💊 Comprehensive Management Plan
+    - Outline a step-by-step 4-week action plan with specific timelines
+    - Include dietary modifications, exercises, medications, or therapies as appropriate
+    - Specify monitoring parameters and follow-up schedule
+    - Provide detailed instructions for each phase of the plan
 
-    ### ⚠️ Important Disclaimer
-    (Include a disclaimer that this is AI-generated advice and not a substitute for professional medical consultation.)
+    ### ⚠️ Critical Considerations
+    - List red flags that require immediate medical attention
+    - Include important contraindications or precautions
+    - Specify when to seek professional medical help
+    - Add a strong disclaimer that this is AI-generated advice and not a substitute for professional consultation
     """
 
+    # Specialty-specific enhancements
     if specialty == "Nutritionist":
         return f"""
-        ROLE: Certified Clinical Nutritionist
+        ROLE: Certified Clinical Nutritionist with 15+ years experience
         HEALTH CONCERN: {problem}
         ADDITIONAL INPUT: {answers}
-
+        
+        SPECIAL INSTRUCTIONS:
+        - Focus on evidence-based nutritional interventions
+        - Include specific food recommendations and meal timing
+        - Address micronutrient deficiencies if relevant
+        - Provide supplement recommendations with dosing guidelines
+        - Include metabolic considerations
+        
         {base_task}
         """
     elif specialty == "Physician":
         return f"""
-        ROLE: Experienced Physician
+        ROLE: Board-Certified Physician with 20+ years clinical experience
         PATIENT COMPLAINT: {problem}
         RESPONSES: {answers}
-
+        
+        SPECIAL INSTRUCTIONS:
+        - Conduct a thorough differential diagnosis
+        - Discuss both pharmacological and non-pharmacological approaches
+        - Include diagnostic considerations and potential tests
+        - Address comorbidities and polypharmacy risks
+        - Provide detailed medication guidance including dosing and side effects
+        
         {base_task}
         """
     elif specialty == "Mental Health":
         return f"""
-        ROLE: Clinical Psychologist
+        ROLE: Licensed Clinical Psychologist specializing in cognitive-behavioral therapy
         CONCERN: {problem}
         RESPONSES: {answers}
-
+        
+        SPECIAL INSTRUCTIONS:
+        - Include cognitive restructuring techniques
+        - Provide specific mindfulness exercises
+        - Outline behavioral activation strategies
+        - Address coping mechanisms for acute distress
+        - Include therapeutic homework assignments
+        
         {base_task}
         """
     elif specialty == "Orthopedic":
         return f"""
-        ROLE: Senior Orthopedic Surgeon
+        ROLE: Senior Orthopedic Surgeon specializing in sports medicine
         COMPLAINT: {problem}
         RESPONSES: {answers}
-
+        
+        SPECIAL INSTRUCTIONS:
+        - Provide detailed rehabilitation protocols
+        - Include specific exercises with proper form instructions
+        - Discuss surgical and non-surgical options
+        - Address pain management strategies
+        - Include return-to-activity guidelines
+        
         {base_task}
         """
     elif specialty == "Dentist":
         return f"""
-        ROLE: Professional Dental Surgeon
+        ROLE: Prosthodontist with expertise in restorative dentistry
         DENTAL ISSUE: {problem}
         RESPONSES: {answers}
-
+        
+        SPECIAL INSTRUCTIONS:
+        - Provide detailed oral hygiene protocols
+        - Include specific techniques for brushing and flossing
+        - Discuss preventive strategies for common dental issues
+        - Address pain management and emergency care
+        - Include professional treatment options with timelines
+        
         {base_task}
         """
     return f"""
-    ROLE: Healthcare Expert
+    ROLE: Senior Healthcare Consultant
     ISSUE: {problem}
     ANSWERS: {answers}
-
+    
+    SPECIAL INSTRUCTIONS:
+    - Provide comprehensive health guidance
+    - Address both acute and chronic aspects
+    - Include holistic approaches
+    - Focus on preventive strategies
+    
     {base_task}
     """
 
@@ -188,7 +241,7 @@ def get_groq_response(prompt):
             {"role": "user", "content": prompt}
         ],
         "temperature": 0.7,
-        "max_tokens": 2048
+        "max_tokens": 4096  # Increased for more detailed responses
     }
     try:
         r = requests.post(GROQ_URL, headers=headers, json=payload)
@@ -285,42 +338,53 @@ if st.session_state.problem:
             st.rerun()
     else:
         st.success("✅ Generating personalized response...")
-        prompt = get_specialty_prompt(
-            st.session_state.specialty,
-            st.session_state.user_data,
-            st.session_state.problem,
-            st.session_state.answers
-        )
-        result = get_groq_response(prompt)
-        st.markdown("### 🧠 AI Suggestion")
-
-        # Define the sections in the order they should appear
-        section_titles = [
-            "📝 Initial Assessment",
-            "💡 Recommendations",
-            "💊 Suggested Plan",
-            "⚠️ Important Disclaimer"
-        ]
-
-        # Split the response into parts based on the '###' markdown heading
-        # The pattern (###\s.*) captures the headings themselves
-        parts = re.split(r'(###\s.*)', result.strip())[1:]
-
-        # Group parts into (title, content) tuples
-        grouped_parts = [(''.join(parts[i:i+2])).strip() for i in range(0, len(parts), 2)]
-
-        # Display sections in expanders
-        for section_text in grouped_parts:
-            # Find the title and content
-            lines = section_text.split('\n', 1)
-            if lines:
-                title = lines[0].replace('###', '').strip()
-                content = lines[1].strip() if len(lines) > 1 else ""
-                with st.expander(f"*{title}*", expanded=True):
-                    st.markdown(content, unsafe_allow_html=True)
+        with st.spinner("🧠 Analyzing your case with professional expertise..."):
+            prompt = get_specialty_prompt(
+                st.session_state.specialty,
+                st.session_state.user_data,
+                st.session_state.problem,
+                st.session_state.answers
+            )
+            result = get_groq_response(prompt)
+        
+        st.markdown("### 🧠 Professional Medical Assessment")
+        
+        # Process and display the structured response
+        try:
+            # Split the response into sections
+            sections = re.split(r'###\s+', result)
+            sections = [s.strip() for s in sections if s.strip()]
+            
+            # Display each section in an expander
+            for section in sections:
+                if section:
+                    # Split into title and content
+                    lines = section.split('\n', 1)
+                    title = lines[0].strip()
+                    content = lines[1].strip() if len(lines) > 1 else ""
+                    
+                    # Special formatting for certain sections
+                    if "Initial Assessment" in title:
+                        st.subheader(f"📝 {title}")
+                        st.markdown(content)
+                    elif "Recommendations" in title:
+                        st.subheader(f"💡 {title}")
+                        st.markdown(content)
+                    elif "Management Plan" in title:
+                        st.subheader(f"📋 {title}")
+                        st.markdown(content)
+                    elif "Critical Considerations" in title:
+                        st.warning(f"⚠️ {title}")
+                        st.markdown(content)
+                    else:
+                        st.subheader(title)
+                        st.markdown(content)
+        except:
+            # Fallback if parsing fails
+            st.markdown(result)
 
 # Changed "Start Fresh" to "AI Consultation"
-if st.button("🤖 AI Consultation", help="Start a new consultation with the same specialist"):
+if st.button("🤖 New Consultation", help="Start a new consultation with the same specialist"):
     # Use a flag to trigger reset at the top of the script
     st.session_state["trigger_fresh_start"] = True
     st.rerun()
