@@ -2,8 +2,6 @@
 import streamlit as st
 import requests
 import re
-from PIL import Image, ImageDraw, ImageFont
-import io
 
 # =============================
 # Configure Groq API
@@ -18,40 +16,46 @@ GROQ_URL = "https://api.groq.com/openai/v1/chat/completions"
 GROQ_MODEL = "llama3-8b-8192"
 
 # =============================
-# SESSION STATE INIT & RESET LOGIC
+# SESSION STATE INIT
 # =============================
-
-# --- Reset Triggers ---
-# This section handles resets triggered by buttons. It runs before the main initialization.
-
-# 1. Main Menu Reset: Clears everything and returns to the specialty selection screen.
-if st.session_state.get("reset_app", False):
+# Handle app reset for a true one-click Main Menu experience
+if st.session_state.get("reset_app", False): 
     st.session_state.clear()
-    st.session_state["reset_app"] = False # Reset the trigger
+    # Reinitialize keys after clearing
+    for key, val in {
+        'specialty': None,
+        'user_data': {},
+        'question_phase': 0,
+        'questions': [],
+        'answers': [],
+        'problem': "",
+        'profile_collected': False,
+        'chat_started': False,
+    }.items():
+        st.session_state[key] = val
+    st.session_state["reset_app"] = False
 
-# 2. Start Fresh Reset: Clears only the question/answer flow, preserving specialty and problem.
+# Handle fresh start for specialty (single-click reset)
 if st.session_state.get("trigger_fresh_start", False):
-    # Preserve important data that should not be reset
-    specialty = st.session_state.get("specialty", None)
-    problem = st.session_state.get("problem", "")
-    user_data = st.session_state.get("user_data", {})
-    profile_collected = st.session_state.get("profile_collected", False)
+    specialty = st.session_state.get("specialty", "")
     
-    # Only reset the question/answer flow
+    # Reset common keys for all specialties
     st.session_state.question_phase = 0
-    st.session_state.questions = []
     st.session_state.answers = []
-    st.session_state.chat_started = False
+    st.session_state.questions = []
+    st.session_state.problem = ""
     
-    # Reset the trigger
-    st.session_state.trigger_fresh_start = False
+    # Reset Nutritionist-specific keys
+    if specialty == "Nutritionist":
+        st.session_state.user_data = {}
+        st.session_state.profile_collected = False
+        if "nutritionist_submit_attempted" in st.session_state:
+            st.session_state.nutritionist_submit_attempted = False
+    
+    # Clear the trigger flag
+    st.session_state["trigger_fresh_start"] = False
 
-# --- Main Initialization ---
-# This loop ensures all necessary keys are present in the session state.
-# It runs on every script rerun, guaranteeing a consistent state.
-
-# Define the default state of the application
-default_state = {
+for key, val in {
     'specialty': None,
     'user_data': {},
     'question_phase': 0,
@@ -60,13 +64,9 @@ default_state = {
     'problem': "",
     'profile_collected': False,
     'chat_started': False,
-    'nutritionist_submit_attempted': False
-}
-
-# Initialize each key if it's not already in the session state
-for key, value in default_state.items():
+}.items():
     if key not in st.session_state:
-        st.session_state[key] = value
+        st.session_state[key] = val
 
 # =============================
 # Prompt Engineering
@@ -191,67 +191,6 @@ def generate_follow_up_question(specialty, problem, previous_answers, question_n
 # =============================
 # Groq API Integration
 # =============================
-def create_report_image(report_data):
-    """Generates a professional-looking report image from structured text data."""
-    width, height = 800, 1000
-    bg_color = "white"
-    font_color = "black"
-    padding = 40
-
-    # Create a blank image
-    image = Image.new("RGB", (width, height), bg_color)
-    draw = ImageDraw.Draw(image)
-
-    # Load fonts (try common fonts, fall back to default)
-    try:
-        title_font = ImageFont.truetype("arialbd.ttf", 36)
-        header_font = ImageFont.truetype("arialbd.ttf", 24)
-        body_font = ImageFont.truetype("arial.ttf", 16)
-    except IOError:
-        title_font = ImageFont.load_default()
-        header_font = ImageFont.load_default()
-        body_font = ImageFont.load_default()
-
-    # Draw Header
-    draw.text((padding, padding), "AI Health Report", font=title_font, fill=font_color)
-    draw.line([(padding, 80), (width - padding, 80)], fill="#cccccc", width=2)
-
-    # Draw sections
-    y_pos = 100
-    for section in report_data:
-        title, content = section['title'], section['content']
-        
-        # Draw section title
-        draw.text((padding, y_pos), title, font=header_font, fill=font_color)
-        y_pos += 40
-
-        # Draw section content with text wrapping
-        lines = content.split('\n')
-        for line in lines:
-            # Simple wrap for long lines
-            if body_font.getlength(line) > (width - 2 * padding):
-                words = line.split()
-                wrapped_line = ""
-                for word in words:
-                    if body_font.getlength(wrapped_line + word) < (width - 2 * padding):
-                        wrapped_line += word + " "
-                    else:
-                        draw.text((padding, y_pos), wrapped_line, font=body_font, fill=font_color)
-                        y_pos += 20
-                        wrapped_line = word + " "
-                draw.text((padding, y_pos), wrapped_line, font=body_font, fill=font_color)
-                y_pos += 20
-            else:
-                draw.text((padding, y_pos), line, font=body_font, fill=font_color)
-                y_pos += 20
-        y_pos += 20 # Extra space between sections
-
-    # Save image to a bytes buffer
-    buffer = io.BytesIO()
-    image.save(buffer, format="PNG")
-    buffer.seek(0)
-    return buffer
-
 def get_groq_response(prompt):
     headers = {
         "Authorization": f"Bearer {GROQ_API_KEY}",
@@ -320,7 +259,7 @@ if st.session_state.specialty == "Nutritionist":
         st.markdown("""
         ### 🌟 Hey there! Welcome to your Nutrition Journey! 🌱
         
-        Before we dive into your health concerns, let's calculate your **perfect weight range** and understand your current health status better! 
+        Before we dive into your health concerns, let's calculate your *perfect weight range* and understand your current health status better! 
         
         This will help me provide you with the most personalized nutrition advice. 🎯
         """)
@@ -494,31 +433,16 @@ if st.session_state.problem and (st.session_state.specialty != "Nutritionist" or
 
         # Group parts into (title, content) tuples
         grouped_parts = [(''.join(parts[i:i+2])).strip() for i in range(0, len(parts), 2)]
-        
-        report_data = []
+
+        # Display sections in expanders
         for section_text in grouped_parts:
+            # Find the title and content
             lines = section_text.split('\n', 1)
             if lines:
                 title = lines[0].replace('###', '').strip()
                 content = lines[1].strip() if len(lines) > 1 else ""
-                report_data.append({'title': title, 'content': content})
-
-        # Display sections in expanders
-        for section in report_data:
-            with st.expander(f"**{section['title']}**", expanded=True):
-                st.markdown(section['content'], unsafe_allow_html=True)
-
-        # Add download button if report data exists
-        if report_data:
-            st.markdown("---")
-            image_buffer = create_report_image(report_data)
-            st.download_button(
-                label="📥 Download Report as Image",
-                data=image_buffer,
-                file_name="ai_health_report.png",
-                mime="image/png",
-                help="Download a PNG image of the report."
-            )
+                with st.expander(f"*{title}*", expanded=True):
+                    st.markdown(content, unsafe_allow_html=True)
 
 # Start Over button with improved handling
 if st.button("🔄 Start Fresh", help="Clear all data and start over with this specialty"):
