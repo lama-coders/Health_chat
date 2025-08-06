@@ -348,10 +348,8 @@ if st.session_state.chat_started:
                 content = lines[1].strip() if len(lines) > 1 else ""
                 with st.expander(f"*{title}*", expanded=True):
                     st.markdown(content, unsafe_allow_html=True)
-            
-            # Start Over button with improved handling
-            if st.button("🔄 Start a New Consultation"):
-                st.session_state.trigger_fresh_start = True
-                st.rerun()
-
-
+        
+        # Start Over button with improved handling
+        if st.button("🔄 Start a New Consultation", key="start_new_consultation"):
+            st.session_state.trigger_fresh_start = True
+            st.rerun()
