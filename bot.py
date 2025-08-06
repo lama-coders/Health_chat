@@ -140,11 +140,12 @@ def generate_follow_up_question(specialty, problem, previous_answers, question_n
     
     Generate ONE specific, relevant follow-up question (question #{question_number}) that would help you better understand their condition and provide better advice. 
     
-    The question should be:
-    - Directly related to their problem
-    - Professional and empathetic
-    - Specific to your specialty area
-    - Help gather important diagnostic/assessment information
+    The question must be:
+    - Very short (around 6-7 words).
+    - A single line.
+    - Directly related to their problem.
+    - Professional and empathetic.
+    - Specific to your specialty area.
     
     Return ONLY the question text, nothing else.
     """
@@ -160,7 +161,7 @@ def generate_follow_up_question(specialty, problem, previous_answers, question_n
             {"role": "user", "content": prompt}
         ],
         "temperature": 0.7,
-        "max_tokens": 150
+        "max_tokens": 30
     }
     try:
         r = requests.post(GROQ_URL, headers=headers, json=payload)
@@ -407,8 +408,6 @@ if st.button("🔄 Start Fresh", help="Clear all data and start over with this s
     # Use a flag to trigger reset at the top of the script
     st.session_state["trigger_fresh_start"] = True
     st.rerun()
-
-
 
 
 
