@@ -2,6 +2,7 @@
 import streamlit as st
 import requests
 import re
+import datetime
 
 # =============================
 # Configure Groq API
@@ -30,6 +31,7 @@ if st.session_state.get("reset_app", False):
         'answers': [],
         'problem': "",
         'chat_started': False,
+        'ai_report': None,  # Store the final AI report
     }.items():
         st.session_state[key] = val
     st.session_state["reset_app"] = False
@@ -43,6 +45,7 @@ if st.session_state.get("trigger_fresh_start", False):
     st.session_state.answers = []
     st.session_state.questions = []
     st.session_state.problem = ""
+    st.session_state.ai_report = None
     
     # Clear the trigger flag
     st.session_state["trigger_fresh_start"] = False
@@ -55,6 +58,7 @@ for key, val in {
     'answers': [],
     'problem': "",
     'chat_started': False,
+    'ai_report': None,
 }.items():
     if key not in st.session_state:
         st.session_state[key] = val
@@ -252,6 +256,29 @@ def get_groq_response(prompt):
         return "API Error"
 
 # =============================
+# Report Download Function
+# =============================
+def generate_report_download(report_content, specialty):
+    """Generate a downloadable report file"""
+    # Create a timestamp for the filename
+    timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+    filename = f"{specialty}_Report_{timestamp}.txt"
+    
+    # Format the report content for download
+    formatted_report = f"Medical Consultation Report\n"
+    formatted_report += f"Specialty: {specialty}\n"
+    formatted_report += f"Date: {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n"
+    formatted_report += "="*50 + "\n\n"
+    
+    # Remove markdown syntax for plain text report
+    clean_report = re.sub(r'#{1,6}\s*', '', report_content)  # Remove headings
+    clean_report = re.sub(r'\*{1,2}(.*?)\*{1,2}', r'\1', clean_report)  # Remove bold/italic
+    clean_report = re.sub(r'-\s+', '* ', clean_report)  # Convert dashes to bullets
+    formatted_report += clean_report
+    
+    return formatted_report, filename
+
+# =============================
 # UI LAYOUT
 # =============================
 specialty_title_map = {
@@ -337,25 +364,30 @@ if st.session_state.problem:
             st.session_state.question_advance_rerun = False  # Reset after rerun
             st.rerun()
     else:
-        st.success("✅ Generating personalized response...")
-        with st.spinner("🧠 Analyzing your case with professional expertise..."):
-            prompt = get_specialty_prompt(
-                st.session_state.specialty,
-                st.session_state.user_data,
-                st.session_state.problem,
-                st.session_state.answers
-            )
-            result = get_groq_response(prompt)
+        if st.session_state.ai_report is None:
+            st.success("✅ Generating personalized response...")
+            with st.spinner("🧠 Analyzing your case with professional expertise..."):
+                prompt = get_specialty_prompt(
+                    st.session_state.specialty,
+                    st.session_state.user_data,
+                    st.session_state.problem,
+                    st.session_state.answers
+                )
+                result = get_groq_response(prompt)
+                st.session_state.ai_report = result
         
         st.markdown("### 🧠 Professional Medical Assessment")
+        
+        # Create a container for the report with a border
+        report_container = st.container(border=True)
         
         # Process and display the structured response
         try:
             # Split the response into sections
-            sections = re.split(r'###\s+', result)
+            sections = re.split(r'###\s+', st.session_state.ai_report)
             sections = [s.strip() for s in sections if s.strip()]
             
-            # Display each section in an expander
+            # Display each section in the report container
             for section in sections:
                 if section:
                     # Split into title and content
@@ -364,24 +396,42 @@ if st.session_state.problem:
                     content = lines[1].strip() if len(lines) > 1 else ""
                     
                     # Special formatting for certain sections
-                    if "Initial Assessment" in title:
-                        st.subheader(f"📝 {title}")
-                        st.markdown(content)
-                    elif "Recommendations" in title:
-                        st.subheader(f"💡 {title}")
-                        st.markdown(content)
-                    elif "Management Plan" in title:
-                        st.subheader(f"📋 {title}")
-                        st.markdown(content)
-                    elif "Critical Considerations" in title:
-                        st.warning(f"⚠️ {title}")
-                        st.markdown(content)
-                    else:
-                        st.subheader(title)
-                        st.markdown(content)
+                    with report_container:
+                        if "Initial Assessment" in title:
+                            st.subheader(f"📝 {title}")
+                            st.markdown(content)
+                        elif "Recommendations" in title:
+                            st.subheader(f"💡 {title}")
+                            st.markdown(content)
+                        elif "Management Plan" in title:
+                            st.subheader(f"📋 {title}")
+                            st.markdown(content)
+                        elif "Critical Considerations" in title:
+                            st.subheader(f"⚠️ {title}")
+                            st.markdown(content)
+                        else:
+                            st.subheader(title)
+                            st.markdown(content)
         except:
             # Fallback if parsing fails
-            st.markdown(result)
+            with report_container:
+                st.markdown(st.session_state.ai_report)
+        
+        # Download button for the report
+        if st.session_state.ai_report:
+            report_text, filename = generate_report_download(
+                st.session_state.ai_report, 
+                st.session_state.specialty
+            )
+            
+            st.download_button(
+                label="📥 Download Full Report",
+                data=report_text,
+                file_name=filename,
+                mime="text/plain",
+                help="Download your complete medical assessment report",
+                use_container_width=True
+            )
 
 # Changed "Start Fresh" to "AI Consultation"
 if st.button("🤖 New Consultation", help="Start a new consultation with the same specialist"):
