@@ -29,14 +29,20 @@ if st.session_state.get("reset_app", False):
     st.session_state.clear()
     st.session_state["reset_app"] = False # Reset the trigger
 
-# 2. Start Fresh Reset: Clears the current specialty's progress but keeps the specialty selected.
+# 2. Start Fresh Reset: Clears only the question/answer flow, preserving specialty and problem.
 if st.session_state.get("trigger_fresh_start", False):
-    # Preserve the chosen specialty
+    # Preserve important data that should not be reset
     specialty = st.session_state.get("specialty", None)
-    # Clear all session data
-    st.session_state.clear()
-    # Restore the specialty
-    st.session_state.specialty = specialty
+    problem = st.session_state.get("problem", "")
+    user_data = st.session_state.get("user_data", {})
+    profile_collected = st.session_state.get("profile_collected", False)
+    
+    # Only reset the question/answer flow
+    st.session_state.question_phase = 0
+    st.session_state.questions = []
+    st.session_state.answers = []
+    st.session_state.chat_started = False
+    
     # Reset the trigger
     st.session_state.trigger_fresh_start = False
 
