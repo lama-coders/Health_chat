@@ -264,15 +264,12 @@ st.text_area(
     disabled=st.session_state.chat_started
 )
 
-if st.session_state.chat_started:
-    pass  # Will be handled below
-else:
+if not st.session_state.chat_started:
     if st.session_state.problem:
         if st.button("🤖 Get AI Consultation"):
             st.session_state.chat_started = True
             st.rerun()
-
-if st.session_state.chat_started:
+else:
     st.subheader("📋 Follow-up Questions")
     
     # Generate questions dynamically based on problem and specialty
