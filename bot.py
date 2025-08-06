@@ -3,6 +3,7 @@ import streamlit as st
 import requests
 import re
 import datetime
+import math
 
 # =============================
 # Configure Groq API
@@ -281,7 +282,7 @@ def generate_report_download(report_content, specialty):
     return formatted_report, filename
 
 # =============================
-# BMI Calculator Function
+# Calculator Functions
 # =============================
 def calculate_bmi(weight, height):
     try:
@@ -304,6 +305,85 @@ def calculate_bmi(weight, height):
             advice = "Let's work together on a healthy weight management plan."
         
         return bmi, category, advice, color
+    except:
+        return None, None, None, None
+
+def calculate_body_fat(gender, waist, neck, height, hip=None):
+    try:
+        if gender == "Male":
+            # US Navy method for men
+            body_fat = 86.010 * math.log10(waist - neck) - 70.041 * math.log10(height) + 36.76
+        else:
+            # US Navy method for women
+            body_fat = 163.205 * math.log10(waist + (hip or 0) - neck) - 97.684 * math.log10(height) - 78.387
+        
+        body_fat = round(body_fat, 1)
+        
+        # Body fat categories
+        if gender == "Male":
+            if body_fat < 6:
+                category = "Essential Fat"
+                color = "blue"
+            elif 6 <= body_fat < 14:
+                category = "Athlete"
+                color = "green"
+            elif 14 <= body_fat < 18:
+                category = "Fitness"
+                color = "lightgreen"
+            elif 18 <= body_fat < 25:
+                category = "Average"
+                color = "orange"
+            else:
+                category = "Obese"
+                color = "red"
+        else:  # Female
+            if body_fat < 16:
+                category = "Essential Fat"
+                color = "blue"
+            elif 16 <= body_fat < 21:
+                category = "Athlete"
+                color = "green"
+            elif 21 <= body_fat < 25:
+                category = "Fitness"
+                color = "lightgreen"
+            elif 25 <= body_fat < 32:
+                category = "Average"
+                color = "orange"
+            else:
+                category = "Obese"
+                color = "red"
+                
+        return body_fat, category, color
+    except:
+        return None, None, None
+
+def calculate_calorie_needs(gender, age, weight, height, activity_level):
+    try:
+        # Basal Metabolic Rate (BMR) calculation
+        if gender == "Male":
+            bmr = 88.362 + (13.397 * weight) + (4.799 * height) - (5.677 * age)
+        else:
+            bmr = 447.593 + (9.247 * weight) + (3.098 * height) - (4.330 * age)
+        
+        # Activity multipliers
+        activity_multipliers = {
+            "Sedentary (little or no exercise)": 1.2,
+            "Lightly active (light exercise 1-3 days/week)": 1.375,
+            "Moderately active (moderate exercise 3-5 days/week)": 1.55,
+            "Very active (hard exercise 6-7 days/week)": 1.725,
+            "Extra active (very hard exercise & physical job)": 1.9
+        }
+        
+        # Total Daily Energy Expenditure (TDEE)
+        tdee = bmr * activity_multipliers.get(activity_level, 1.2)
+        
+        # Weight goals
+        maintain = round(tdee)
+        mild_loss = round(tdee * 0.9)  # 10% deficit
+        loss = round(tdee * 0.79)      # 21% deficit
+        extreme_loss = round(tdee * 0.59)  # 41% deficit
+        
+        return maintain, mild_loss, loss, extreme_loss
     except:
         return None, None, None, None
 
@@ -338,6 +418,8 @@ if st.session_state.current_page == 'home':
         st.markdown("""
         **Health calculators and tools:**
         - BMI Calculator
+        - Body Fat Percentage
+        - Calorie Needs
         - More tools coming soon...
         """)
     
@@ -516,71 +598,188 @@ elif st.session_state.current_page == 'checkups':
 # UI LAYOUT - MEDICAL LAB
 # =============================
 elif st.session_state.current_page == 'lab':
-    st.title("🔬 Medical Lab")
+    st.title("🔬 Medical Lab Tools")
     
     # Back to home page button
     if st.button("🏠 Home", help="Go back to main menu"):
         st.session_state.current_page = 'home'
         st.rerun()
     
-    st.subheader("BMI Calculator")
-    st.markdown("Calculate your Body Mass Index to understand your weight status.")
+    # Create tabs for different calculators
+    tab_bmi, tab_bodyfat, tab_calories = st.tabs([
+        "📏 BMI Calculator", 
+        "📊 Body Fat %", 
+        "🍎 Calorie Needs"
+    ])
     
-    # BMI Calculator
-    col1, col2 = st.columns(2)
-    with col1:
-        age = st.number_input("Age (years)", min_value=1, max_value=120, value=25)
-        weight = st.number_input("Weight (kg)", min_value=1.0, max_value=300.0, value=70.0, step=0.1)
-    with col2:
-        height = st.number_input("Height (cm)", min_value=50, max_value=250, value=170)
-        gender = st.selectbox("Gender", ["Male", "Female", "Other"])
-    
-    if st.button("Calculate BMI", type="primary", use_container_width=True):
-        bmi, category, advice, color = calculate_bmi(weight, height)
+    # BMI Calculator Tab
+    with tab_bmi:
+        st.subheader("Body Mass Index (BMI) Calculator")
+        st.markdown("Calculate your Body Mass Index to understand your weight status.")
         
-        if bmi:
-            st.markdown("---")
-            st.subheader("Your BMI Results")
+        col1, col2 = st.columns(2)
+        with col1:
+            age = st.number_input("Age (years)", min_value=1, max_value=120, value=25, key="bmi_age")
+            weight = st.number_input("Weight (kg)", min_value=1.0, max_value=300.0, value=70.0, step=0.1, key="bmi_weight")
+        with col2:
+            height = st.number_input("Height (cm)", min_value=50, max_value=250, value=170, key="bmi_height")
+            gender = st.selectbox("Gender", ["Male", "Female", "Other"], key="bmi_gender")
+        
+        if st.button("Calculate BMI", type="primary", key="bmi_calc", use_container_width=True):
+            bmi, category, advice, color = calculate_bmi(weight, height)
             
-            # Create a container for results
-            with st.container(border=True):
-                col1, col2, col3 = st.columns(3)
-                with col1:
-                    st.metric("BMI Score", f"{bmi}")
-                with col2:
-                    st.metric("Category", category)
-                with col3:
-                    st.metric("Age", f"{age} years")
+            if bmi:
+                st.markdown("---")
+                st.subheader("Your BMI Results")
                 
-                # Health advice based on BMI
-                if color == "green":
-                    st.success(f"✅ {advice}")
-                elif color == "orange":
-                    st.warning(f"⚠️ {advice}")
-                elif color == "red":
-                    st.error(f"❗ {advice}")
-                else:
-                    st.info(f"💡 {advice}")
-                
-                # BMI chart
-                st.markdown("### BMI Categories:")
-                st.markdown("""
-                - **Underweight**: < 18.5
-                - **Normal weight**: 18.5 - 24.9
-                - **Overweight**: 25 - 29.9
-                - **Obese**: ≥ 30
-                """)
-        else:
-            st.error("Please enter valid weight and height values.")
+                # Create a container for results
+                with st.container(border=True):
+                    col1, col2, col3 = st.columns(3)
+                    with col1:
+                        st.metric("BMI Score", f"{bmi}")
+                    with col2:
+                        st.metric("Category", category)
+                    with col3:
+                        st.metric("Age", f"{age} years")
+                    
+                    # Health advice based on BMI
+                    if color == "green":
+                        st.success(f"✅ {advice}")
+                    elif color == "orange":
+                        st.warning(f"⚠️ {advice}")
+                    elif color == "red":
+                        st.error(f"❗ {advice}")
+                    else:
+                        st.info(f"💡 {advice}")
+                    
+                    # BMI chart
+                    st.markdown("### BMI Categories:")
+                    st.markdown("""
+                    - **Underweight**: < 18.5
+                    - **Normal weight**: 18.5 - 24.9
+                    - **Overweight**: 25 - 29.9
+                    - **Obese**: ≥ 30
+                    """)
+            else:
+                st.error("Please enter valid weight and height values.")
     
-    # Additional lab tools can be added here
+    # Body Fat Percentage Tab
+    with tab_bodyfat:
+        st.subheader("Body Fat Percentage Calculator")
+        st.markdown("Estimate your body fat percentage using the US Navy method.")
+        
+        col1, col2 = st.columns(2)
+        with col1:
+            gender = st.selectbox("Gender", ["Male", "Female"], key="bf_gender")
+            waist = st.number_input("Waist Circumference (cm)", min_value=50, max_value=200, value=80, key="bf_waist")
+            neck = st.number_input("Neck Circumference (cm)", min_value=20, max_value=60, value=38, key="bf_neck")
+        with col2:
+            height = st.number_input("Height (cm)", min_value=50, max_value=250, value=170, key="bf_height")
+            if gender == "Female":
+                hip = st.number_input("Hip Circumference (cm)", min_value=50, max_value=200, value=95, key="bf_hip")
+            else:
+                hip = None
+                st.info("👤 Hip measurement not required for men")
+        
+        if st.button("Calculate Body Fat %", type="primary", key="bf_calc", use_container_width=True):
+            body_fat, category, color = calculate_body_fat(gender, waist, neck, height, hip)
+            
+            if body_fat:
+                st.markdown("---")
+                st.subheader("Your Body Fat Results")
+                
+                with st.container(border=True):
+                    col1, col2 = st.columns(2)
+                    with col1:
+                        st.metric("Body Fat Percentage", f"{body_fat}%")
+                    with col2:
+                        st.metric("Category", category)
+                    
+                    # Visual indicator
+                    st.progress(min(body_fat/50, 1.0), text=f"Body Fat: {body_fat}%")
+                    
+                    # Body fat categories
+                    st.markdown("### Body Fat Categories:")
+                    if gender == "Male":
+                        st.markdown("""
+                        - **Essential**: 2-5%
+                        - **Athlete**: 6-13%
+                        - **Fitness**: 14-17%
+                        - **Average**: 18-24%
+                        - **Obese**: 25%+
+                        """)
+                    else:
+                        st.markdown("""
+                        - **Essential**: 10-13%
+                        - **Athlete**: 14-20%
+                        - **Fitness**: 21-24%
+                        - **Average**: 25-31%
+                        - **Obese**: 32%+
+                        """)
+            else:
+                st.error("Please enter valid measurements.")
+    
+    # Calorie Needs Tab
+    with tab_calories:
+        st.subheader("Daily Calorie Needs Calculator")
+        st.markdown("Calculate your daily calorie requirements based on your activity level.")
+        
+        col1, col2 = st.columns(2)
+        with col1:
+            gender = st.selectbox("Gender", ["Male", "Female"], key="cal_gender")
+            age = st.number_input("Age (years)", min_value=1, max_value=120, value=30, key="cal_age")
+            weight = st.number_input("Weight (kg)", min_value=1.0, max_value=300.0, value=70.0, step=0.1, key="cal_weight")
+        with col2:
+            height = st.number_input("Height (cm)", min_value=50, max_value=250, value=170, key="cal_height")
+            activity_level = st.selectbox("Activity Level", [
+                "Sedentary (little or no exercise)",
+                "Lightly active (light exercise 1-3 days/week)",
+                "Moderately active (moderate exercise 3-5 days/week)",
+                "Very active (hard exercise 6-7 days/week)",
+                "Extra active (very hard exercise & physical job)"
+            ], key="cal_activity")
+        
+        if st.button("Calculate Calorie Needs", type="primary", key="cal_calc", use_container_width=True):
+            maintain, mild_loss, loss, extreme_loss = calculate_calorie_needs(
+                gender, age, weight, height, activity_level
+            )
+            
+            if maintain:
+                st.markdown("---")
+                st.subheader("Your Daily Calorie Needs")
+                
+                with st.container(border=True):
+                    st.metric("Maintain Weight", f"{maintain} calories/day")
+                    
+                    st.markdown("### Weight Loss Goals:")
+                    col1, col2, col3 = st.columns(3)
+                    with col1:
+                        st.metric("Mild Loss (0.25 kg/week)", f"{mild_loss} cal")
+                    with col2:
+                        st.metric("Loss (0.5 kg/week)", f"{loss} cal")
+                    with col3:
+                        st.metric("Extreme Loss (1 kg/week)", f"{extreme_loss} cal")
+                    
+                    st.info("💡 A safe calorie deficit is 300-500 calories below maintenance")
+                    
+                    st.markdown("### Nutrition Tips:")
+                    st.markdown("""
+                    - 🥦 Focus on protein-rich foods to preserve muscle mass
+                    - 💧 Drink at least 2 liters of water daily
+                    - ⏱️ Eat regular meals to maintain metabolism
+                    - 🥑 Include healthy fats like avocado and nuts
+                    """)
+            else:
+                st.error("Please enter valid information.")
+    
+    # Coming Soon Section
     st.markdown("---")
-    st.subheader("More Lab Tools Coming Soon")
+    st.subheader("🔜 More Lab Tools Coming Soon")
     st.markdown("""
     We're expanding our medical lab with new tools:
-    - Body Fat Percentage Calculator
-    - Calorie Needs Estimator
+    - Heart Rate Zones Calculator
+    - Ideal Weight Calculator
     - Hydration Calculator
-    - Heart Rate Analyzer
+    - Macronutrient Calculator
     """)
     st.info("Check back soon for these new features!")
