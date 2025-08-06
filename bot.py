@@ -237,8 +237,11 @@ with col2:
         st.rerun()
 
 # Show problem input for all specialties
-st.session_state.problem = st.text_area("📝 Describe your health concern:", value=st.session_state.problem)
+st.session_state.problem = st.text_area("📝 Describe your health concern:", 
+                                        value=st.session_state.problem,
+                                        placeholder="Briefly describe your health concern...")
 
+# For all specialties, including Nutritionist
 if st.session_state.problem:
     st.subheader("📋 Follow-up Questions")
     
