@@ -24,6 +24,7 @@ if st.session_state.get("reset_app", False):
     st.session_state.clear()
     # Reinitialize keys after clearing
     for key, val in {
+        'current_page': 'home',
         'specialty': None,
         'user_data': {},
         'question_phase': 0,
@@ -51,6 +52,7 @@ if st.session_state.get("trigger_fresh_start", False):
     st.session_state["trigger_fresh_start"] = False
 
 for key, val in {
+    'current_page': 'home',
     'specialty': None,
     'user_data': {},
     'question_phase': 0,
@@ -279,162 +281,306 @@ def generate_report_download(report_content, specialty):
     return formatted_report, filename
 
 # =============================
-# UI LAYOUT
+# BMI Calculator Function
 # =============================
-specialty_title_map = {
-    "Nutritionist": "Nutrition Specialist",
-    "Physician": "Physician",
-    "Mental Health": "Mental Health Expert",
-    "Orthopedic": "Orthopedic Surgeon",
-    "Dentist": "Dental Specialist"
-}
+def calculate_bmi(weight, height):
+    try:
+        bmi = round(weight / ((height/100)**2), 1)
+        if bmi < 18.5:
+            category = "Underweight"
+            color = "blue"
+            advice = "You may need to gain some healthy weight."
+        elif 18.5 <= bmi < 25:
+            category = "Normal Weight"
+            color = "green"
+            advice = "Great! You're in the healthy weight range."
+        elif 25 <= bmi < 30:
+            category = "Overweight"
+            color = "orange"
+            advice = "Consider a balanced diet and regular exercise."
+        else:
+            category = "Obese"
+            color = "red"
+            advice = "Let's work together on a healthy weight management plan."
+        
+        return bmi, category, advice, color
+    except:
+        return None, None, None, None
 
-if not st.session_state.chat_started:
-    st.title("🩺 Healthcare Chatbot")
-    st.subheader("Select a Specialist")
-    specialties = list(specialty_title_map.keys())
-    cols = st.columns(len(specialties))
-    for i, name in enumerate(specialties):
-        if cols[i].button(name):
-            st.session_state.specialty = name
-            st.session_state.question_phase = 0
-            st.session_state.answers = []
-            st.session_state.problem = ""
-            st.session_state.user_data = {}
-            st.session_state.chat_started = True
+# =============================
+# UI LAYOUT - HOME PAGE
+# =============================
+if st.session_state.current_page == 'home':
+    st.title("🏥 Health Assistant Hub")
+    st.markdown("""
+    Welcome to your personal health assistant! Get instant medical guidance from AI specialists 
+    or use our health calculators to monitor your wellness metrics.
+    """)
+    
+    col1, col2 = st.columns(2)
+    with col1:
+        if st.button("👨‍⚕️ Medical Checkups", help="Consult with AI medical specialists", use_container_width=True):
+            st.session_state.current_page = 'checkups'
             st.rerun()
-    st.stop()
+        st.markdown("""
+        **Get AI consultations with specialists:**
+        - Physician
+        - Nutritionist
+        - Mental Health
+        - Orthopedic
+        - Dentist
+        """)
+    
+    with col2:
+        if st.button("🔬 Medical Lab", help="Access health calculators and tools", use_container_width=True):
+            st.session_state.current_page = 'lab'
+            st.rerun()
+        st.markdown("""
+        **Health calculators and tools:**
+        - BMI Calculator
+        - More tools coming soon...
+        """)
+    
+    st.markdown("---")
+    st.info("💡 Remember: This tool provides AI-generated advice and should not replace professional medical consultation.")
 
-# Add navigation header with back button
-col1, col2 = st.columns([4, 1])
-with col1:
-    st.title(f"🩺 {specialty_title_map.get(st.session_state.specialty)}")
-with col2:
-    if st.button("🏠 Main Menu", help="Go back to specialty selection"):
-        # Use a dedicated reset flag to guarantee a single-click reset
-        st.session_state.clear()
-        st.session_state["reset_app"] = True
+# =============================
+# UI LAYOUT - MEDICAL CHECKUPS
+# =============================
+elif st.session_state.current_page == 'checkups':
+    specialty_title_map = {
+        "Nutritionist": "Nutrition Specialist",
+        "Physician": "Physician",
+        "Mental Health": "Mental Health Expert",
+        "Orthopedic": "Orthopedic Surgeon",
+        "Dentist": "Dental Specialist"
+    }
+    
+    # Specialty selection page
+    if not st.session_state.chat_started:
+        st.title("👨‍⚕️ Medical Checkups")
+        st.subheader("Select a Specialist")
+        
+        # Back to home page button
+        if st.button("🏠 Home", help="Go back to main menu"):
+            st.session_state.current_page = 'home'
+            st.rerun()
+        
+        specialties = list(specialty_title_map.keys())
+        cols = st.columns(len(specialties))
+        for i, name in enumerate(specialties):
+            if cols[i].button(name):
+                st.session_state.specialty = name
+                st.session_state.question_phase = 0
+                st.session_state.answers = []
+                st.session_state.problem = ""
+                st.session_state.user_data = {}
+                st.session_state.chat_started = True
+                st.rerun()
+        st.stop()
+    
+    # Specialty chat page
+    # Add navigation header with back button
+    col1, col2 = st.columns([4, 1])
+    with col1:
+        st.title(f"🩺 {specialty_title_map.get(st.session_state.specialty)}")
+    with col2:
+        if st.button("🏠 Home", help="Go back to main menu"):
+            st.session_state.current_page = 'home'
+            st.rerun()
+    
+    # Show problem input for all specialties
+    st.session_state.problem = st.text_area("📝 Describe your health concern:", 
+                                            value=st.session_state.problem,
+                                            placeholder="Briefly describe your health concern...")
+    
+    # For all specialties, including Nutritionist
+    if st.session_state.problem:
+        st.subheader("📋 Follow-up Questions")
+        
+        # Generate questions dynamically based on problem and specialty
+        max_questions = 3  # Limit to 3 questions for better UX
+        
+        if st.session_state.question_phase < max_questions:
+            # Generate current question dynamically
+            if st.session_state.question_phase >= len(st.session_state.questions):
+                with st.spinner("Generating relevant question..."):
+                    new_question = generate_follow_up_question(
+                        st.session_state.specialty,
+                        st.session_state.problem,
+                        st.session_state.answers,
+                        st.session_state.question_phase + 1
+                    )
+                    st.session_state.questions.append(new_question)
+            
+            # Display current question
+            current_question = st.session_state.questions[st.session_state.question_phase]
+            
+            # Use regular text input without form
+            answer = st.text_input(current_question, key=f"q_{st.session_state.question_phase}", placeholder="Type your answer here...")
+            
+            # User-friendly buttons
+            col1, col2 = st.columns([1, 1])
+            with col1:
+                if st.button("✅ Next Question", key=f"submit_{st.session_state.question_phase}", help="Submit your answer and continue"):
+                    if answer.strip():
+                        st.session_state.answers.append(answer)
+                        st.session_state.question_phase += 1
+                        st.session_state.question_advance_rerun = True
+                    else:
+                        st.warning("Please provide an answer or get your results.")
+            with col2:
+                if st.button("🚀 Get My Results", key=f"skip_{st.session_state.question_phase}", help="Skip remaining questions and get AI advice"):
+                    st.session_state.question_phase = max_questions
+                    st.session_state.question_advance_rerun = True
+            if st.session_state.get("question_advance_rerun", False):
+                st.session_state.question_advance_rerun = False  # Reset after rerun
+                st.rerun()
+        else:
+            if st.session_state.ai_report is None:
+                st.success("✅ Generating personalized response...")
+                with st.spinner("🧠 Analyzing your case with professional expertise..."):
+                    prompt = get_specialty_prompt(
+                        st.session_state.specialty,
+                        st.session_state.user_data,
+                        st.session_state.problem,
+                        st.session_state.answers
+                    )
+                    result = get_groq_response(prompt)
+                    st.session_state.ai_report = result
+            
+            st.markdown("### 🧠 Professional Medical Assessment")
+            
+            # Create a container for the report with a border
+            report_container = st.container(border=True)
+            
+            # Process and display the structured response
+            try:
+                # Split the response into sections
+                sections = re.split(r'###\s+', st.session_state.ai_report)
+                sections = [s.strip() for s in sections if s.strip()]
+                
+                # Display each section in the report container
+                for section in sections:
+                    if section:
+                        # Split into title and content
+                        lines = section.split('\n', 1)
+                        title = lines[0].strip()
+                        content = lines[1].strip() if len(lines) > 1 else ""
+                        
+                        # Special formatting for certain sections
+                        with report_container:
+                            if "Initial Assessment" in title:
+                                st.subheader(f"📝 {title}")
+                                st.markdown(content)
+                            elif "Recommendations" in title:
+                                st.subheader(f"💡 {title}")
+                                st.markdown(content)
+                            elif "Management Plan" in title:
+                                st.subheader(f"📋 {title}")
+                                st.markdown(content)
+                            elif "Critical Considerations" in title:
+                                st.subheader(f"⚠️ {title}")
+                                st.markdown(content)
+                            else:
+                                st.subheader(title)
+                                st.markdown(content)
+            except:
+                # Fallback if parsing fails
+                with report_container:
+                    st.markdown(st.session_state.ai_report)
+            
+            # Download button for the report
+            if st.session_state.ai_report:
+                report_text, filename = generate_report_download(
+                    st.session_state.ai_report, 
+                    st.session_state.specialty
+                )
+                
+                st.download_button(
+                    label="📥 Download Full Report",
+                    data=report_text,
+                    file_name=filename,
+                    mime="text/plain",
+                    help="Download your complete medical assessment report",
+                    use_container_width=True
+                )
+    
+    # Changed "Start Fresh" to "AI Consultation"
+    if st.button("🤖 New Consultation", help="Start a new consultation with the same specialist"):
+        # Use a flag to trigger reset at the top of the script
+        st.session_state["trigger_fresh_start"] = True
         st.rerun()
 
-# Show problem input for all specialties
-st.session_state.problem = st.text_area("📝 Describe your health concern:", 
-                                        value=st.session_state.problem,
-                                        placeholder="Briefly describe your health concern...")
-
-# For all specialties, including Nutritionist
-if st.session_state.problem:
-    st.subheader("📋 Follow-up Questions")
+# =============================
+# UI LAYOUT - MEDICAL LAB
+# =============================
+elif st.session_state.current_page == 'lab':
+    st.title("🔬 Medical Lab")
     
-    # Generate questions dynamically based on problem and specialty
-    max_questions = 3  # Limit to 3 questions for better UX
+    # Back to home page button
+    if st.button("🏠 Home", help="Go back to main menu"):
+        st.session_state.current_page = 'home'
+        st.rerun()
     
-    if st.session_state.question_phase < max_questions:
-        # Generate current question dynamically
-        if st.session_state.question_phase >= len(st.session_state.questions):
-            with st.spinner("Generating relevant question..."):
-                new_question = generate_follow_up_question(
-                    st.session_state.specialty,
-                    st.session_state.problem,
-                    st.session_state.answers,
-                    st.session_state.question_phase + 1
-                )
-                st.session_state.questions.append(new_question)
+    st.subheader("BMI Calculator")
+    st.markdown("Calculate your Body Mass Index to understand your weight status.")
+    
+    # BMI Calculator
+    col1, col2 = st.columns(2)
+    with col1:
+        age = st.number_input("Age (years)", min_value=1, max_value=120, value=25)
+        weight = st.number_input("Weight (kg)", min_value=1.0, max_value=300.0, value=70.0, step=0.1)
+    with col2:
+        height = st.number_input("Height (cm)", min_value=50, max_value=250, value=170)
+        gender = st.selectbox("Gender", ["Male", "Female", "Other"])
+    
+    if st.button("Calculate BMI", type="primary", use_container_width=True):
+        bmi, category, advice, color = calculate_bmi(weight, height)
         
-        # Display current question
-        current_question = st.session_state.questions[st.session_state.question_phase]
-        
-        # Use regular text input without form
-        answer = st.text_input(current_question, key=f"q_{st.session_state.question_phase}", placeholder="Type your answer here...")
-        
-        # User-friendly buttons
-        col1, col2 = st.columns([1, 1])
-        with col1:
-            if st.button("✅ Next Question", key=f"submit_{st.session_state.question_phase}", help="Submit your answer and continue"):
-                if answer.strip():
-                    st.session_state.answers.append(answer)
-                    st.session_state.question_phase += 1
-                    st.session_state.question_advance_rerun = True
+        if bmi:
+            st.markdown("---")
+            st.subheader("Your BMI Results")
+            
+            # Create a container for results
+            with st.container(border=True):
+                col1, col2, col3 = st.columns(3)
+                with col1:
+                    st.metric("BMI Score", f"{bmi}")
+                with col2:
+                    st.metric("Category", category)
+                with col3:
+                    st.metric("Age", f"{age} years")
+                
+                # Health advice based on BMI
+                if color == "green":
+                    st.success(f"✅ {advice}")
+                elif color == "orange":
+                    st.warning(f"⚠️ {advice}")
+                elif color == "red":
+                    st.error(f"❗ {advice}")
                 else:
-                    st.warning("Please provide an answer or get your results.")
-        with col2:
-            if st.button("🚀 Get My Results", key=f"skip_{st.session_state.question_phase}", help="Skip remaining questions and get AI advice"):
-                st.session_state.question_phase = max_questions
-                st.session_state.question_advance_rerun = True
-        if st.session_state.get("question_advance_rerun", False):
-            st.session_state.question_advance_rerun = False  # Reset after rerun
-            st.rerun()
-    else:
-        if st.session_state.ai_report is None:
-            st.success("✅ Generating personalized response...")
-            with st.spinner("🧠 Analyzing your case with professional expertise..."):
-                prompt = get_specialty_prompt(
-                    st.session_state.specialty,
-                    st.session_state.user_data,
-                    st.session_state.problem,
-                    st.session_state.answers
-                )
-                result = get_groq_response(prompt)
-                st.session_state.ai_report = result
-        
-        st.markdown("### 🧠 Professional Medical Assessment")
-        
-        # Create a container for the report with a border
-        report_container = st.container(border=True)
-        
-        # Process and display the structured response
-        try:
-            # Split the response into sections
-            sections = re.split(r'###\s+', st.session_state.ai_report)
-            sections = [s.strip() for s in sections if s.strip()]
-            
-            # Display each section in the report container
-            for section in sections:
-                if section:
-                    # Split into title and content
-                    lines = section.split('\n', 1)
-                    title = lines[0].strip()
-                    content = lines[1].strip() if len(lines) > 1 else ""
-                    
-                    # Special formatting for certain sections
-                    with report_container:
-                        if "Initial Assessment" in title:
-                            st.subheader(f"📝 {title}")
-                            st.markdown(content)
-                        elif "Recommendations" in title:
-                            st.subheader(f"💡 {title}")
-                            st.markdown(content)
-                        elif "Management Plan" in title:
-                            st.subheader(f"📋 {title}")
-                            st.markdown(content)
-                        elif "Critical Considerations" in title:
-                            st.subheader(f"⚠️ {title}")
-                            st.markdown(content)
-                        else:
-                            st.subheader(title)
-                            st.markdown(content)
-        except:
-            # Fallback if parsing fails
-            with report_container:
-                st.markdown(st.session_state.ai_report)
-        
-        # Download button for the report
-        if st.session_state.ai_report:
-            report_text, filename = generate_report_download(
-                st.session_state.ai_report, 
-                st.session_state.specialty
-            )
-            
-            st.download_button(
-                label="📥 Download Full Report",
-                data=report_text,
-                file_name=filename,
-                mime="text/plain",
-                help="Download your complete medical assessment report",
-                use_container_width=True
-            )
-
-# Changed "Start Fresh" to "AI Consultation"
-if st.button("🤖 New Consultation", help="Start a new consultation with the same specialist"):
-    # Use a flag to trigger reset at the top of the script
-    st.session_state["trigger_fresh_start"] = True
-    st.rerun()
+                    st.info(f"💡 {advice}")
+                
+                # BMI chart
+                st.markdown("### BMI Categories:")
+                st.markdown("""
+                - **Underweight**: < 18.5
+                - **Normal weight**: 18.5 - 24.9
+                - **Overweight**: 25 - 29.9
+                - **Obese**: ≥ 30
+                """)
+        else:
+            st.error("Please enter valid weight and height values.")
+    
+    # Additional lab tools can be added here
+    st.markdown("---")
+    st.subheader("More Lab Tools Coming Soon")
+    st.markdown("""
+    We're expanding our medical lab with new tools:
+    - Body Fat Percentage Calculator
+    - Calorie Needs Estimator
+    - Hydration Calculator
+    - Heart Rate Analyzer
+    """)
+    st.info("Check back soon for these new features!")
