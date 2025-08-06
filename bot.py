@@ -44,6 +44,7 @@ if st.session_state.get("trigger_fresh_start", False):
     st.session_state.answers = []
     st.session_state.questions = []
     st.session_state.problem = ""
+    st.session_state.chat_started = False
     
     # Reset Nutritionist-specific keys
     if specialty == "Nutritionist":
@@ -52,8 +53,9 @@ if st.session_state.get("trigger_fresh_start", False):
         if "nutritionist_submit_attempted" in st.session_state:
             st.session_state.nutritionist_submit_attempted = False
     
-    # Clear the trigger flag
+    # Clear the trigger flag and immediately rerun
     st.session_state["trigger_fresh_start"] = False
+    st.rerun()
 
 for key, val in {
     'specialty': None,
@@ -444,8 +446,8 @@ if st.session_state.problem and (st.session_state.specialty != "Nutritionist" or
                 with st.expander(f"*{title}*", expanded=True):
                     st.markdown(content, unsafe_allow_html=True)
 
-# Start Over button with improved handling
-if st.button("🔄 Start Fresh", help="Clear all data and start over with this specialty"):
+# Get New Consultation button with improved handling
+if st.button("🤖 Get New AI Consultation", help="Start a fresh consultation with this specialist"):
     # Use a flag to trigger reset at the top of the script
     st.session_state["trigger_fresh_start"] = True
     st.rerun()
