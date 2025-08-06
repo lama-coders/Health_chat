@@ -368,8 +368,14 @@ if st.session_state.specialty == "Nutritionist":
 else:
     # For all other specialties, show the regular problem input
     st.session_state.problem = st.text_area("📝 Describe your health concern:", value=st.session_state.problem)
+    if st.session_state.problem:
+        if st.button("🤖 Get AI Consultation"):
+            st.session_state.chat_started = True
+            st.rerun()
 
-if st.session_state.problem and (st.session_state.specialty != "Nutritionist" or st.session_state.chat_started):
+# --- Follow-up Questions ---
+# This section only appears after the user has started the chat.
+if st.session_state.chat_started:
     st.subheader("📋 Follow-up Questions")
     
     # Generate questions dynamically based on problem and specialty
