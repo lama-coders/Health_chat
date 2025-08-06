@@ -18,46 +18,34 @@ GROQ_URL = "https://api.groq.com/openai/v1/chat/completions"
 GROQ_MODEL = "llama3-8b-8192"
 
 # =============================
-# SESSION STATE INIT
+# SESSION STATE INIT & RESET LOGIC
 # =============================
-# Handle app reset for a true one-click Main Menu experience
-if st.session_state.get("reset_app", False): 
+
+# --- Reset Triggers ---
+# This section handles resets triggered by buttons. It runs before the main initialization.
+
+# 1. Main Menu Reset: Clears everything and returns to the specialty selection screen.
+if st.session_state.get("reset_app", False):
     st.session_state.clear()
-    # Reinitialize keys after clearing
-    for key, val in {
-        'specialty': None,
-        'user_data': {},
-        'question_phase': 0,
-        'questions': [],
-        'answers': [],
-        'problem': "",
-        'profile_collected': False,
-        'chat_started': False,
-    }.items():
-        st.session_state[key] = val
-    st.session_state["reset_app"] = False
+    st.session_state["reset_app"] = False # Reset the trigger
 
-# Handle fresh start for specialty (single-click reset)
+# 2. Start Fresh Reset: Clears the current specialty's progress but keeps the specialty selected.
 if st.session_state.get("trigger_fresh_start", False):
-    specialty = st.session_state.get("specialty", "")
-    
-    # Reset common keys for all specialties
-    st.session_state.question_phase = 0
-    st.session_state.answers = []
-    st.session_state.questions = []
-    st.session_state.problem = ""
-    
-    # Reset Nutritionist-specific keys
-    if specialty == "Nutritionist":
-        st.session_state.user_data = {}
-        st.session_state.profile_collected = False
-        if "nutritionist_submit_attempted" in st.session_state:
-            st.session_state.nutritionist_submit_attempted = False
-    
-    # Clear the trigger flag
-    st.session_state["trigger_fresh_start"] = False
+    # Preserve the chosen specialty
+    specialty = st.session_state.get("specialty", None)
+    # Clear all session data
+    st.session_state.clear()
+    # Restore the specialty
+    st.session_state.specialty = specialty
+    # Reset the trigger
+    st.session_state.trigger_fresh_start = False
 
-for key, val in {
+# --- Main Initialization ---
+# This loop ensures all necessary keys are present in the session state.
+# It runs on every script rerun, guaranteeing a consistent state.
+
+# Define the default state of the application
+default_state = {
     'specialty': None,
     'user_data': {},
     'question_phase': 0,
@@ -66,9 +54,13 @@ for key, val in {
     'problem': "",
     'profile_collected': False,
     'chat_started': False,
-}.items():
+    'nutritionist_submit_attempted': False
+}
+
+# Initialize each key if it's not already in the session state
+for key, value in default_state.items():
     if key not in st.session_state:
-        st.session_state[key] = val
+        st.session_state[key] = value
 
 # =============================
 # Prompt Engineering
@@ -231,11 +223,11 @@ def create_report_image(report_data):
         lines = content.split('\n')
         for line in lines:
             # Simple wrap for long lines
-            if body_font.getsize(line)[0] > (width - 2 * padding):
+            if body_font.getlength(line) > (width - 2 * padding):
                 words = line.split()
                 wrapped_line = ""
                 for word in words:
-                    if body_font.getsize(wrapped_line + word)[0] < (width - 2 * padding):
+                    if body_font.getlength(wrapped_line + word) < (width - 2 * padding):
                         wrapped_line += word + " "
                     else:
                         draw.text((padding, y_pos), wrapped_line, font=body_font, fill=font_color)
@@ -527,6 +519,8 @@ if st.button("🔄 Start Fresh", help="Clear all data and start over with this s
     # Use a flag to trigger reset at the top of the script
     st.session_state["trigger_fresh_start"] = True
     st.rerun()
+
+
 
 
 
