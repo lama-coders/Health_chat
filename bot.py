@@ -368,13 +368,15 @@ if st.session_state.specialty == "Nutritionist":
 else:
     # For all other specialties, show the regular problem input
     st.session_state.problem = st.text_area("📝 Describe your health concern:", value=st.session_state.problem)
-    if st.session_state.problem:
-        if st.button("🤖 Get AI Consultation"):
-            st.session_state.chat_started = True
-            st.rerun()
+
+# Show the initial consultation button if the problem has been described but the chat hasn't started.
+if st.session_state.problem and not st.session_state.chat_started:
+    if st.button("🤖 Get AI Consultation"):
+        st.session_state.chat_started = True
+        st.rerun()
 
 # --- Follow-up Questions ---
-# This section only appears after the user has started the chat.
+# This section only appears after the user has explicitly started the chat.
 if st.session_state.chat_started:
     st.subheader("📋 Follow-up Questions")
     
@@ -428,8 +430,10 @@ if st.session_state.chat_started:
                     st.rerun()
 
         with col3:
-            if st.button("🔄", help="Start Over"):
-                st.session_state.trigger_fresh_start = True
+            if st.button("🔄", help="Start the questions over for this consultation"):
+                st.session_state.question_phase = 0
+                st.session_state.questions = []
+                st.session_state.answers = []
                 st.rerun()
     else:
         st.success("✅ Generating personalized response...")
@@ -466,7 +470,6 @@ if st.session_state.chat_started:
                 content = lines[1].strip() if len(lines) > 1 else ""
                 with st.expander(f"*{title}*", expanded=True):
                     st.markdown(content, unsafe_allow_html=True)
-
 
 
 
