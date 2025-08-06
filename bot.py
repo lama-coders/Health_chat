@@ -211,10 +211,10 @@ def get_groq_response(prompt):
 # UI LAYOUT
 # =============================
 specialty_title_map = {
-    "Nutritionist": "Nutrition Specialist",
+    "Nutritionist": "Nutritionist",
     "Physician": "Physician",
-    "Infectious Disease Specialist": "General Practitioner",
-    "Dentist": "Dental Specialist",
+    "Infectious Disease Specialist": "Infectious Disease Specialist",
+    "Dentist": "Dentist",
     "Medical Checkups": "Medical Checkups"
 }
 
@@ -286,105 +286,89 @@ if st.session_state.specialty == "Medical Checkups":
                     st.success(f"✅ {advice}")
                 else:
                     st.warning(f"⚠️ {advice}")
-
             except ValueError:
                 st.error("⚠️ Please enter valid numbers for age, weight, and height.")
     st.stop() # Stop execution here, this is a standalone tool
 
 # --- DEFAULT CONSULTATION UI ---
-# This layered structure runs for all medical specialties.
-st.markdown("### 📝 Your Health Concern")
-problem_label = "🩺 Describe your health concern:"
-problem_placeholder = "e.g., I have a toothache, I've been having chest pains..."
+else:
+    st.markdown("### 📝 Your Health Concern")
+    problem_label = "🩺 Describe your health concern:"
+    problem_placeholder = "e.g., I have a toothache, I've been having chest pains..."
 
-st.session_state.problem = st.text_area(
-    problem_label,
-    value=st.session_state.problem,
-    placeholder=problem_placeholder,
-    disabled=st.session_state.chat_started # Disable after chat starts
-)
+    st.text_area(
+        problem_label,
+        placeholder=problem_placeholder,
+        key="problem",
+        disabled=st.session_state.chat_started
+    )
 
-# Conditionally show the start button OR the Q&A section
-if not st.session_state.chat_started:
-    if st.session_state.problem:
-        if st.button("🤖 Get AI Consultation"):
-            st.session_state.chat_started = True
-            st.rerun()
-else: # This means st.session_state.chat_started is True
-    st.subheader("📋 Follow-up Questions")
-    
-    # Generate questions dynamically based on problem and specialty
-    max_questions = 3  # Limit to 3 questions for better UX
-    
-    if st.session_state.question_phase < max_questions:
-        # Generate current question dynamically
-        if st.session_state.question_phase >= len(st.session_state.questions):
-            with st.spinner("Generating relevant question..."):
-                new_question = generate_follow_up_question(
-                    st.session_state.specialty,
-                    st.session_state.problem,
-                    st.session_state.answers,
-                    st.session_state.question_phase + 1
-                )
-                st.session_state.questions.append(new_question)
+    if st.session_state.chat_started:
+        st.subheader("📋 Follow-up Questions")
+        max_questions = 3
         
-        # Display current question
-        current_question = st.session_state.questions[st.session_state.question_phase]
-        
-        answer = st.text_input(current_question, key=f"q_{st.session_state.question_phase}", placeholder="Type your answer here...")
-        
-        # Buttons for navigation
-        col1, col2, col3 = st.columns([1, 1, 1])
-        with col1:
-            if st.button("✅ Submit & Next", key=f"submit_{st.session_state.question_phase}"):
-                if answer.strip():
-                    st.session_state.answers.append(answer)
-                    st.session_state.question_phase += 1
+        if st.session_state.question_phase < max_questions:
+            if st.session_state.question_phase >= len(st.session_state.questions):
+                with st.spinner("Generating relevant question..."):
+                    new_question = generate_follow_up_question(
+                        st.session_state.specialty,
+                        st.session_state.problem,
+                        st.session_state.answers,
+                        st.session_state.question_phase + 1
+                    )
+                    st.session_state.questions.append(new_question)
+            
+            current_question = st.session_state.questions[st.session_state.question_phase]
+            answer = st.text_input(current_question, key=f"q_{st.session_state.question_phase}", placeholder="Type your answer here...")
+            
+            col1, col2, col3 = st.columns([1, 1, 1])
+            with col1:
+                if st.button("✅ Submit & Next", key=f"submit_{st.session_state.question_phase}"):
+                    if answer.strip():
+                        st.session_state.answers.append(answer)
+                        st.session_state.question_phase += 1
+                        st.rerun()
+                    else:
+                        st.warning("Please provide an answer.")
+            with col2:
+                if st.button("💡 Get AI Suggestion", key=f"skip_{st.session_state.question_phase}"):
+                    st.session_state.question_phase = max_questions
                     st.rerun()
-                else:
-                    st.warning("Please provide an answer.")
-        with col2:
-            if st.button("💡 Get AI Suggestion", key=f"skip_{st.session_state.question_phase}"):
-                st.session_state.question_phase = max_questions
-                st.rerun()
-        with col3:
-            if st.button("🔄 Start Over", key=f"reset_{st.session_state.question_phase}"):
-                st.session_state.question_phase = 0
-                st.session_state.questions = []
-                st.session_state.answers = []
+            with col3:
+                if st.button("🔄 Start Over", help="Reset the questions for this consultation"):
+                    st.session_state.question_phase = 0
+                    st.session_state.questions = []
+                    st.session_state.answers = []
+                    st.rerun()
+        else:
+            st.success("✅ You've answered all questions! Generating your report...")
+            prompt = get_specialty_prompt(
+                st.session_state.specialty,
+                st.session_state.user_data,
+                st.session_state.problem,
+                st.session_state.answers
+            )
+            result = get_groq_response(prompt)
+            st.markdown("### 🧠 AI Suggestion")
+
+            parts = re.split(r'(###\s.*)', result.strip())[1:]
+            grouped_parts = [(''.join(parts[i:i+2])).strip() for i in range(0, len(parts), 2)]
+            for section_text in grouped_parts:
+                lines = section_text.split('\n', 1)
+                if lines:
+                    title = lines[0].replace('###', '').strip()
+                    content = lines[1].strip() if len(lines) > 1 else ""
+                    with st.expander(f"*{title}*", expanded=True):
+                        st.markdown(content, unsafe_allow_html=True)
+            
+            if st.button("🔄 Start a New Consultation"):
+                st.session_state.trigger_fresh_start = True
                 st.rerun()
     else:
-        st.success("✅ You've answered all questions! Generating your report...")
-        prompt = get_specialty_prompt(
-            st.session_state.specialty,
-            st.session_state.user_data,
-            st.session_state.problem,
-            st.session_state.answers
-        )
-        result = get_groq_response(prompt)
-        st.markdown("### 🧠 AI Suggestion")
-
-        # Split and display the response in expanders
-        parts = re.split(r'(###\s.*)', result.strip())[1:]
-        grouped_parts = [(''.join(parts[i:i+2])).strip() for i in range(0, len(parts), 2)]
-        for section_text in grouped_parts:
-            lines = section_text.split('\n', 1)
-            if lines:
-                title = lines[0].replace('###', '').strip()
-                content = lines[1].strip() if len(lines) > 1 else ""
-                with st.expander(f"*{title}*", expanded=True):
-                    st.markdown(content, unsafe_allow_html=True)
-        
-        if st.button("🔄 Start a New Consultation"):
-            st.session_state.question_phase = 0
-            st.session_state.questions = []
-            st.session_state.answers = []
-            st.session_state.problem = ""
-            st.session_state.chat_started = False
-            st.rerun()
-
-
-
+        if st.session_state.problem:
+            if st.button("🤖 Get AI Consultation"):
+                st.session_state.chat_started = True
+                st.rerun()
 
 
 
