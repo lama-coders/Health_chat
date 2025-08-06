@@ -34,6 +34,7 @@ if st.session_state.get("reset_app", False):
         'problem': "",
         'chat_started': False,
         'ai_report': None,  # Store the final AI report
+        'in_checkups': False  # Track if we're in the checkups section
     }.items():
         st.session_state[key] = val
     st.session_state["reset_app"] = False
@@ -62,6 +63,7 @@ for key, val in {
     'problem': "",
     'chat_started': False,
     'ai_report': None,
+    'in_checkups': False
 }.items():
     if key not in st.session_state:
         st.session_state[key] = val
@@ -401,6 +403,8 @@ if st.session_state.current_page == 'home':
     with col1:
         if st.button("👨‍⚕️ Medical Checkups", help="Consult with AI medical specialists", use_container_width=True):
             st.session_state.current_page = 'checkups'
+            st.session_state.in_checkups = True
+            st.session_state.chat_started = False  # Reset chat state
             st.rerun()
         st.markdown("""
         **Get AI consultations with specialists:**
@@ -447,6 +451,11 @@ elif st.session_state.current_page == 'checkups':
         if st.button("🏠 Home", help="Go back to main menu"):
             st.session_state.current_page = 'home'
             st.rerun()
+        # Back to checkups selection button
+        if st.button("⬅️ Back to Specialties", help="Go back to specialty selection"):
+            st.session_state.chat_started = False
+            st.session_state.specialty = None
+            st.rerun()
         
         specialties = list(specialty_title_map.keys())
         cols = st.columns(len(specialties))
@@ -469,6 +478,10 @@ elif st.session_state.current_page == 'checkups':
     with col2:
         if st.button("🏠 Home", help="Go back to main menu"):
             st.session_state.current_page = 'home'
+            st.rerun()
+        if st.button("⬅️ Back", help="Go back to specialties selection"):
+            st.session_state.chat_started = False
+            st.session_state.specialty = None
             st.rerun()
     
     # Show problem input for all specialties
