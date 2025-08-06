@@ -252,122 +252,27 @@ with col2:
         st.session_state["reset_app"] = True
         st.rerun()
 
-# Special handling for Nutritionist specialty
-if st.session_state.specialty == "Nutritionist":
-    if not st.session_state.profile_collected:
-        # Friendly welcome message for Nutritionist
-        st.markdown("""
-        ### 🌟 Hey there! Welcome to your Nutrition Journey! 🌱
-        
-        Before we dive into your health concerns, let's calculate your *perfect weight range* and understand your current health status better! 
-        
-        This will help me provide you with the most personalized nutrition advice. 🎯
-        """)
-        
-        st.markdown("#### 📋 Please fill in your basic information:")
-        
-        # Profile collection with better UX
-        col1, col2 = st.columns(2)
-        with col1:
-            age = st.text_input("🎂 Age (years)", placeholder="e.g., 25")
-            weight = st.text_input("⚖️ Current Weight (kg)", placeholder="e.g., 70")
-        with col2:
-            height = st.text_input("📏 Height (cm)", placeholder="e.g., 175")
-            gender = st.selectbox("👤 Gender", ["Select...", "Male", "Female", "Other"])
-        
-        # Improved single-click submit button with validation flags
-        if 'nutritionist_submit_attempted' not in st.session_state:
-            st.session_state.nutritionist_submit_attempted = False
-        calculate_clicked = st.button("🚀 Calculate My Health Profile", help="Calculate BMI and health status")
-        if calculate_clicked:
-            st.session_state.nutritionist_submit_attempted = True
-        if st.session_state.nutritionist_submit_attempted:
-            age_clean = age.strip()
-            weight_clean = weight.strip()
-            height_clean = height.strip()
-            if not (age_clean and weight_clean and height_clean and gender != "Select..."):
-                st.warning("📝 Please fill in all fields to continue.")
-            else:
-                try:
-                    age_val = int(age_clean)
-                    weight_val = float(weight_clean)
-                    height_val = float(height_clean)
-                except ValueError:
-                    st.error("⚠️ Please enter valid numbers for age, weight, and height.")
-                else:
-                    try:
-                        bmi = round(weight_val / ((height_val/100)**2), 1)
-                        if bmi < 18.5:
-                            bmi_category = "Underweight"
-                            bmi_color = "blue"
-                            advice = "You may need to gain some healthy weight."
-                        elif 18.5 <= bmi < 25:
-                            bmi_category = "Normal Weight"
-                            bmi_color = "green"
-                            advice = "Great! You're in the healthy weight range."
-                        elif 25 <= bmi < 30:
-                            bmi_category = "Overweight"
-                            bmi_color = "orange"
-                            advice = "Consider a balanced diet and regular exercise."
-                        else:
-                            bmi_category = "Obese"
-                            bmi_color = "red"
-                            advice = "Let's work together on a healthy weight management plan."
-                        st.session_state.user_data = {
-                            "age": age_val,
-                            "weight": weight_val,
-                            "height": height_val,
-                            "gender": gender,
-                            "BMI": bmi,
-                            "bmi_category": bmi_category,
-                            "health_advice": advice
-                        }
-                        st.session_state.profile_collected = True
-                        st.session_state.nutritionist_submit_attempted = False
-                        st.rerun()
-                    except Exception:
-                        st.error("⚠️ Please enter valid numbers for age, weight, and height.")
+# --- DEFAULT CONSULTATION UI ---
+st.markdown("### 📝 Your Health Concern")
+problem_label = "🩺 Describe your health concern:"
+problem_placeholder = "e.g., I have a toothache, I've been having chest pains..."
 
+st.text_area(
+    problem_label,
+    placeholder=problem_placeholder,
+    key="problem",
+    disabled=st.session_state.chat_started
+)
 
-    
-    else:
-        # Show BMI results after profile is collected
-        st.markdown("### 🎉 Your Health Profile Results")
-        
-        col1, col2, col3 = st.columns(3)
-        with col1:
-            st.metric("⚖️ BMI", f"{st.session_state.user_data['BMI']}")
-        with col2:
-            st.metric("🏅 Category", st.session_state.user_data['bmi_category'])
-        with col3:
-            st.metric("🎂 Age", f"{st.session_state.user_data['age']} years")
-        
-        # Health advice based on BMI
-        bmi_category = st.session_state.user_data['bmi_category']
-        if bmi_category == "Normal Weight":
-            st.success(f"✅ {st.session_state.user_data['health_advice']}")
-        elif bmi_category in ["Underweight", "Overweight"]:
-            st.warning(f"⚠️ {st.session_state.user_data['health_advice']}")
-        else:
-            st.info(f"💪 {st.session_state.user_data['health_advice']}")
-        
-        st.markdown("---")
-        st.markdown("### 📝 Now, tell me about your nutrition concerns:")
-        st.session_state.problem = st.text_area(
-            "🍎 What would you like help with today?", 
-            value=st.session_state.problem,
-            placeholder="e.g., I want to lose weight, I need a meal plan, I have digestive issues..."
-        )
-        if st.session_state.problem:
-            if st.button("Start Answering Questions ➡️"):
-                st.session_state.chat_started = True
-                st.rerun()
-
+if st.session_state.chat_started:
+    pass  # Will be handled below
 else:
-    # For all other specialties, show the regular problem input
-    st.session_state.problem = st.text_area("📝 Describe your health concern:", value=st.session_state.problem)
+    if st.session_state.problem:
+        if st.button("🤖 Get AI Consultation"):
+            st.session_state.chat_started = True
+            st.rerun()
 
-if st.session_state.problem and (st.session_state.specialty != "Nutritionist" or st.session_state.chat_started):
+if st.session_state.chat_started:
     st.subheader("📋 Follow-up Questions")
     
     # Generate questions dynamically based on problem and specialty
@@ -443,12 +348,10 @@ if st.session_state.problem and (st.session_state.specialty != "Nutritionist" or
                 content = lines[1].strip() if len(lines) > 1 else ""
                 with st.expander(f"*{title}*", expanded=True):
                     st.markdown(content, unsafe_allow_html=True)
-
-# Start Over button with improved handling
-if st.button("🔄 Start Fresh", help="Clear all data and start over with this specialty"):
-    # Use a flag to trigger reset at the top of the script
-    st.session_state["trigger_fresh_start"] = True
-    st.rerun()
-
+            
+            # Start Over button with improved handling
+            if st.button("🔄 Start a New Consultation"):
+                st.session_state.trigger_fresh_start = True
+                st.rerun()
 
 
