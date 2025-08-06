@@ -1,6 +1,7 @@
 # file: main.py
 import streamlit as st
 import requests
+import re
 
 # =============================
 # Configure Groq API
@@ -71,6 +72,25 @@ for key, val in {
 # Prompt Engineering
 # =============================
 def get_specialty_prompt(specialty, user_data, problem, answers):
+    # Base instructions for a structured, professional response
+    base_task = """
+    TASK:
+    Provide a professional, personalized assessment based on the user's problem and answers. 
+    Your response MUST be structured with the following markdown headings:
+
+    ### 📝 Initial Assessment
+    (Provide a summary of the problem based on the user's input.)
+
+    ### 💡 Recommendations
+    (Offer clear, actionable suggestions, home care, or lifestyle advice. Use bullet points.)
+
+    ### 💊 Suggested Plan
+    (Outline a step-by-step plan, which could include medications, exercises, or a nutrition plan. Be specific.)
+
+    ### ⚠️ Important Disclaimer
+    (Include a disclaimer that this is AI-generated advice and not a substitute for professional medical consultation.)
+    """
+
     if specialty == "Nutritionist":
         return f"""
         ROLE: Certified Clinical Nutritionist
@@ -83,10 +103,7 @@ def get_specialty_prompt(specialty, user_data, problem, answers):
         HEALTH CONCERN: {problem}
         ADDITIONAL INPUT: {answers}
 
-        TASK:
-        - Calculate BMI and classify it
-        - Provide a structured, clear weekly nutrition plan
-        - Include hydration tips, meal timings, and snacks
+        {base_task}
         """
     elif specialty == "Physician":
         return f"""
@@ -94,7 +111,7 @@ def get_specialty_prompt(specialty, user_data, problem, answers):
         PATIENT COMPLAINT: {problem}
         RESPONSES: {answers}
 
-        Provide a detailed but simple explanation of possible conditions and suggested next steps including home care and medications.
+        {base_task}
         """
     elif specialty == "Mental Health":
         return f"""
@@ -102,7 +119,7 @@ def get_specialty_prompt(specialty, user_data, problem, answers):
         CONCERN: {problem}
         RESPONSES: {answers}
 
-        Deliver empathetic, actionable mental health advice with daily coping tools and therapy suggestions.
+        {base_task}
         """
     elif specialty == "Orthopedic":
         return f"""
@@ -110,7 +127,7 @@ def get_specialty_prompt(specialty, user_data, problem, answers):
         COMPLAINT: {problem}
         RESPONSES: {answers}
 
-        Give analysis of musculoskeletal symptoms and recommend posture, exercise, or diagnostics needed.
+        {base_task}
         """
     elif specialty == "Dentist":
         return f"""
@@ -118,14 +135,14 @@ def get_specialty_prompt(specialty, user_data, problem, answers):
         DENTAL ISSUE: {problem}
         RESPONSES: {answers}
 
-        Outline potential dental diagnoses and hygienic practices with cost-effective treatment paths.
+        {base_task}
         """
     return f"""
     ROLE: Healthcare Expert
     ISSUE: {problem}
     ANSWERS: {answers}
 
-    Provide helpful health suggestions.
+    {base_task}
     """
 
 # =============================
@@ -401,7 +418,31 @@ if st.session_state.problem and (st.session_state.specialty != "Nutritionist" or
         )
         result = get_groq_response(prompt)
         st.markdown("### 🧠 AI Suggestion")
-        st.markdown(result, unsafe_allow_html=True)
+
+        # Define the sections in the order they should appear
+        section_titles = [
+            "📝 Initial Assessment",
+            "💡 Recommendations",
+            "💊 Suggested Plan",
+            "⚠️ Important Disclaimer"
+        ]
+
+        # Split the response into parts based on the '###' markdown heading
+        # The pattern (###\s.*) captures the headings themselves
+        parts = re.split(r'(###\s.*)', result.strip())[1:]
+
+        # Group parts into (title, content) tuples
+        grouped_parts = [(''.join(parts[i:i+2])).strip() for i in range(0, len(parts), 2)]
+
+        # Display sections in expanders
+        for section_text in grouped_parts:
+            # Find the title and content
+            lines = section_text.split('\n', 1)
+            if lines:
+                title = lines[0].replace('###', '').strip()
+                content = lines[1].strip() if len(lines) > 1 else ""
+                with st.expander(f"**{title}**", expanded=True):
+                    st.markdown(content, unsafe_allow_html=True)
 
 # Start Over button with improved handling
 if st.button("🔄 Start Fresh", help="Clear all data and start over with this specialty"):
