@@ -226,7 +226,7 @@ specialty_title_map = {
     "Dentist": "Dental Specialist"
 }
 
-if not st.session_state.chat_started:
+if not st.session_state.get('specialty'):
     st.title("🩺 Healthcare Chatbot")
     st.subheader("Select a Specialist")
     specialties = list(specialty_title_map.keys())
@@ -451,8 +451,6 @@ if st.button("🤖 Get New AI Consultation", help="Start a fresh consultation wi
     # Use a flag to trigger reset at the top of the script
     st.session_state["trigger_fresh_start"] = True
     st.rerun()
-
-
 
 
 
