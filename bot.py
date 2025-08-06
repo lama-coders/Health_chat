@@ -2,6 +2,8 @@
 import streamlit as st
 import requests
 import re
+from PIL import Image, ImageDraw, ImageFont
+import io
 
 # =============================
 # Configure Groq API
@@ -191,6 +193,67 @@ def generate_follow_up_question(specialty, problem, previous_answers, question_n
 # =============================
 # Groq API Integration
 # =============================
+def create_report_image(report_data):
+    """Generates a professional-looking report image from structured text data."""
+    width, height = 800, 1000
+    bg_color = "white"
+    font_color = "black"
+    padding = 40
+
+    # Create a blank image
+    image = Image.new("RGB", (width, height), bg_color)
+    draw = ImageDraw.Draw(image)
+
+    # Load fonts (try common fonts, fall back to default)
+    try:
+        title_font = ImageFont.truetype("arialbd.ttf", 36)
+        header_font = ImageFont.truetype("arialbd.ttf", 24)
+        body_font = ImageFont.truetype("arial.ttf", 16)
+    except IOError:
+        title_font = ImageFont.load_default()
+        header_font = ImageFont.load_default()
+        body_font = ImageFont.load_default()
+
+    # Draw Header
+    draw.text((padding, padding), "AI Health Report", font=title_font, fill=font_color)
+    draw.line([(padding, 80), (width - padding, 80)], fill="#cccccc", width=2)
+
+    # Draw sections
+    y_pos = 100
+    for section in report_data:
+        title, content = section['title'], section['content']
+        
+        # Draw section title
+        draw.text((padding, y_pos), title, font=header_font, fill=font_color)
+        y_pos += 40
+
+        # Draw section content with text wrapping
+        lines = content.split('\n')
+        for line in lines:
+            # Simple wrap for long lines
+            if body_font.getsize(line)[0] > (width - 2 * padding):
+                words = line.split()
+                wrapped_line = ""
+                for word in words:
+                    if body_font.getsize(wrapped_line + word)[0] < (width - 2 * padding):
+                        wrapped_line += word + " "
+                    else:
+                        draw.text((padding, y_pos), wrapped_line, font=body_font, fill=font_color)
+                        y_pos += 20
+                        wrapped_line = word + " "
+                draw.text((padding, y_pos), wrapped_line, font=body_font, fill=font_color)
+                y_pos += 20
+            else:
+                draw.text((padding, y_pos), line, font=body_font, fill=font_color)
+                y_pos += 20
+        y_pos += 20 # Extra space between sections
+
+    # Save image to a bytes buffer
+    buffer = io.BytesIO()
+    image.save(buffer, format="PNG")
+    buffer.seek(0)
+    return buffer
+
 def get_groq_response(prompt):
     headers = {
         "Authorization": f"Bearer {GROQ_API_KEY}",
@@ -433,22 +496,41 @@ if st.session_state.problem and (st.session_state.specialty != "Nutritionist" or
 
         # Group parts into (title, content) tuples
         grouped_parts = [(''.join(parts[i:i+2])).strip() for i in range(0, len(parts), 2)]
-
-        # Display sections in expanders
+        
+        report_data = []
         for section_text in grouped_parts:
-            # Find the title and content
             lines = section_text.split('\n', 1)
             if lines:
                 title = lines[0].replace('###', '').strip()
                 content = lines[1].strip() if len(lines) > 1 else ""
-                with st.expander(f"**{title}**", expanded=True):
-                    st.markdown(content, unsafe_allow_html=True)
+                report_data.append({'title': title, 'content': content})
+
+        # Display sections in expanders
+        for section in report_data:
+            with st.expander(f"**{section['title']}**", expanded=True):
+                st.markdown(section['content'], unsafe_allow_html=True)
+
+        # Add download button if report data exists
+        if report_data:
+            st.markdown("---")
+            image_buffer = create_report_image(report_data)
+            st.download_button(
+                label="📥 Download Report as Image",
+                data=image_buffer,
+                file_name="ai_health_report.png",
+                mime="image/png",
+                help="Download a PNG image of the report."
+            )
 
 # Start Over button with improved handling
 if st.button("🔄 Start Fresh", help="Clear all data and start over with this specialty"):
     # Use a flag to trigger reset at the top of the script
     st.session_state["trigger_fresh_start"] = True
     st.rerun()
+
+
+
+
 
 
 
