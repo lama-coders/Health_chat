@@ -30,7 +30,6 @@ if st.session_state.get("reset_app", False):
         'answers': [],
         'problem': "",
         'chat_started': False,
-        'show_questions': False  # New state to control question display
     }.items():
         st.session_state[key] = val
     st.session_state["reset_app"] = False
@@ -44,7 +43,6 @@ if st.session_state.get("trigger_fresh_start", False):
     st.session_state.answers = []
     st.session_state.questions = []
     st.session_state.problem = ""
-    st.session_state.show_questions = False
     
     # Clear the trigger flag
     st.session_state["trigger_fresh_start"] = False
@@ -57,7 +55,6 @@ for key, val in {
     'answers': [],
     'problem': "",
     'chat_started': False,
-    'show_questions': False
 }.items():
     if key not in st.session_state:
         st.session_state[key] = val
@@ -240,19 +237,9 @@ with col2:
         st.rerun()
 
 # Show problem input for all specialties
-problem_placeholder = "Briefly describe your health concern (e.g. I have persistent headaches, I need diet advice, my knee hurts when walking...)"
-st.session_state.problem = st.text_area("📝 Describe your health concern:", 
-                                        value=st.session_state.problem,
-                                        placeholder=problem_placeholder)
+st.session_state.problem = st.text_area("📝 Describe your health concern:", value=st.session_state.problem)
 
-# Single button to start the consultation
-if st.session_state.problem and not st.session_state.show_questions:
-    if st.button("🚀 Start AI Consultation", type="primary", use_container_width=True):
-        st.session_state.show_questions = True
-        st.rerun()
-
-# Show follow-up questions only after user starts consultation
-if st.session_state.problem and st.session_state.show_questions:
+if st.session_state.problem:
     st.subheader("📋 Follow-up Questions")
     
     # Generate questions dynamically based on problem and specialty
@@ -285,7 +272,7 @@ if st.session_state.problem and st.session_state.show_questions:
                     st.session_state.question_phase += 1
                     st.session_state.question_advance_rerun = True
                 else:
-                    st.warning("Please provide an answer to proceed")
+                    st.warning("Please provide an answer or get your results.")
         with col2:
             if st.button("🚀 Get My Results", key=f"skip_{st.session_state.question_phase}", help="Skip remaining questions and get AI advice"):
                 st.session_state.question_phase = max_questions
@@ -329,8 +316,8 @@ if st.session_state.problem and st.session_state.show_questions:
                 with st.expander(f"*{title}*", expanded=True):
                     st.markdown(content, unsafe_allow_html=True)
 
-# Changed to "AI Consultation"
-if st.button("🤖 New AI Consultation", help="Start a new consultation with the same specialist"):
+# Changed "Start Fresh" to "AI Consultation"
+if st.button("🤖 AI Consultation", help="Start a new consultation with the same specialist"):
     # Use a flag to trigger reset at the top of the script
     st.session_state["trigger_fresh_start"] = True
     st.rerun()
