@@ -190,6 +190,25 @@ h1, h2, h3, h4, h5, h6 {
     color: var(--dark) !important;
     font-weight: 600 !important;
 }
+
+/* Fix for result text color in expanders */
+[data-testid="stExpander"] {
+    background: white !important;
+    border-radius: 12px !important;
+    border: none !important;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08) !important;
+    margin-bottom: 1rem !important;
+}
+
+[data-testid="stExpander"] p,
+[data-testid="stExpander"] li {
+    color: var(--dark) !important;
+}
+
+[data-testid="stExpander"] summary {
+    font-weight: 600 !important;
+    color: var(--primary) !important;
+}
 </style>
 """, unsafe_allow_html=True)
 
