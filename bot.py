@@ -43,6 +43,27 @@ st.markdown("""
     background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
 }
 
+/* Style for calculator result containers */
+[data-testid="stVerticalBlock"] {
+    background-color: var(--light);
+    border-radius: 16px;
+    padding: 1rem;
+}
+
+[data-testid="stVerticalBlock"] p,
+[data-testid="stVerticalBlock"] li,
+[data-testid="stVerticalBlock"] h3 {
+    color: var(--dark) !important;
+}
+
+[data-testid="stMetricValue"] {
+    color: var(--dark) !important;
+}
+
+[data-testid="stMetricLabel"] {
+    color: var(--dark) !important;
+}
+
 /* Header styling */
 h1, h2, h3, h4, h5, h6 {
     color: var(--dark) !important;
