@@ -906,7 +906,7 @@ elif st.session_state.current_page == 'checkups':
                     st.session_state.questions.append(new_question)
             
             # Display current question
-            st.markdown(f"<div class='pulse' style='font-size: 1.2rem; padding: 16px; background: #f0f9ff; border-radius: 12px; margin-bottom: 16px;'>{st.session_state.questions[st.session_state.question_phase]}</div>", unsafe_allow_html=True)
+            st.markdown(f"<div class='pulse' style='font-size: 1.2rem; padding: 16px; background: #2563eb; color: white; border-radius: 12px; margin-bottom: 16px;'>{st.session_state.questions[st.session_state.question_phase]}</div>", unsafe_allow_html=True)
             
             # Use regular text input without form
             answer = st.text_input("Your answer:", key=f"q_{st.session_state.question_phase}", placeholder="Type your response here...")
