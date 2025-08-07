@@ -12,7 +12,7 @@ import altair as alt
 # Set page configuration
 st.set_page_config(
     page_title="AI SMART HOSPITAL",
-    page_icon="hi",
+    page_icon="🏥",
     layout="wide",
     initial_sidebar_state="expanded"
 )
@@ -65,18 +65,15 @@ st.markdown("""
     color: var(--dark) !important;
 }
 
-/* Force all button text to be white */
-[data-testid="stButton"] button p {
-    color: white !important;
-}
-
 /* Header styling */
 h1, h2, h3, h4, h5, h6 {
     color: var(--dark) !important;
 }
 
-/* Animated buttons */
+/* Consistent button styling - Black background with white text */
 .stButton>button {
+    background-color: #1e293b !important;
+    color: white !important;
     border: none !important;
     border-radius: 12px !important;
     padding: 12px 24px !important;
@@ -88,12 +85,36 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .stButton>button:hover {
+    background-color: #334155 !important;
+    color: white !important;
     transform: translateY(-3px) !important;
     box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15) !important;
 }
 
 .stButton>button:active {
+    background-color: #0f172a !important;
+    color: white !important;
     transform: translateY(1px) !important;
+}
+
+/* Force all button text to be white */
+[data-testid="stButton"] button,
+[data-testid="stButton"] button p,
+[data-testid="stButton"] button span,
+[data-testid="stButton"] button div {
+    color: white !important;
+    background-color: #1e293b !important;
+}
+
+/* Primary button styling */
+[data-testid="stButton"] button[kind="primary"] {
+    background-color: #1e293b !important;
+    color: white !important;
+}
+
+[data-testid="stButton"] button[kind="primary"]:hover {
+    background-color: #334155 !important;
+    color: white !important;
 }
 
 .stButton>button:after {
