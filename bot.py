@@ -191,22 +191,7 @@ h1, h2, h3, h4, h5, h6 {
     font-weight: 600 !important;
 }
 
-/* Styling for the report container */
-.report-container {
-    background-color: #f0f2f6; /* Light grey background */
-    padding: 1.5rem;
-    border-radius: 12px;
-    border: 1px solid #e2e8f0;
-}
 
-.report-container p,
-.report-container li,
-.report-container h3,
-.report-container h2,
-.report-container h1,
-.report-container * {
-    color: var(--dark) !important; /* Ensure all text inside is dark */
-}
 </style>
 """, unsafe_allow_html=True)
 
@@ -962,43 +947,44 @@ elif st.session_state.current_page == 'checkups':
             st.markdown("---")
             st.markdown("## 🧠 Professional Medical Assessment")
             
-            st.markdown("<div class='report-container'>", unsafe_allow_html=True)
-            # Process and display the structured response
-            try:
-                # Split the response into sections
-                sections = re.split(r'###\s+', st.session_state.ai_report)
-                sections = [s.strip() for s in sections if s.strip()]
-                
-                # Display each section in the report container
-                for section in sections:
-                    if section:
-                        # Split into title and content
-                        lines = section.split('\n', 1)
-                        title = lines[0].strip()
-                        content = lines[1].strip() if len(lines) > 1 else ""
-                        
-                        # Special formatting for certain sections
-                        if "Initial Assessment" in title:
-                            st.subheader(f"📝 {title}")
-                            st.markdown(content)
-                        elif "Recommendations" in title:
-                            st.subheader(f"💡 {title}")
-                            st.markdown(content)
-                        elif "Management Plan" in title:
-                            st.subheader(f"📋 {title}")
-                            st.markdown(content)
-                        elif "Critical Considerations" in title:
-                            st.markdown("<div style='padding: 16px; background: #fffbeb; border-radius: 12px; border: 1px solid #fde047;'>", unsafe_allow_html=True)
-                            st.subheader(f"⚠️ {title}")
-                            st.markdown(content)
-                            st.markdown("</div>", unsafe_allow_html=True)
-                        else:
-                            st.subheader(title)
-                            st.markdown(content)
-            except:
-                # Fallback if parsing fails
-                st.markdown(st.session_state.ai_report)
-            st.markdown("</div>", unsafe_allow_html=True)
+            # Create a container for the report with a border
+            with st.container(border=True):
+                # Process and display the structured response
+                try:
+                    # Split the response into sections
+                    sections = re.split(r'###\s+', st.session_state.ai_report)
+                    sections = [s.strip() for s in sections if s.strip()]
+                    
+                    # Display each section in the report container
+                    for section in sections:
+                        if section:
+                            # Split into title and content
+                            lines = section.split('\n', 1)
+                            title = lines[0].strip()
+                            content = lines[1].strip() if len(lines) > 1 else ""
+                            
+                            # Special formatting for certain sections
+                            # The #1e293b color is the --dark variable
+                            if "Initial Assessment" in title:
+                                st.subheader(f"📝 {title}")
+                                st.markdown(f"<div style='color: #1e293b;'>{content}</div>", unsafe_allow_html=True)
+                            elif "Recommendations" in title:
+                                st.subheader(f"💡 {title}")
+                                st.markdown(f"<div style='color: #1e293b;'>{content}</div>", unsafe_allow_html=True)
+                            elif "Management Plan" in title:
+                                st.subheader(f"📋 {title}")
+                                st.markdown(f"<div style='color: #1e293b;'>{content}</div>", unsafe_allow_html=True)
+                            elif "Critical Considerations" in title:
+                                st.markdown("<div style='padding: 16px; background: #fffbeb; border-radius: 12px; color: #1e293b;'>", unsafe_allow_html=True)
+                                st.subheader(f"⚠️ {title}")
+                                st.markdown(content) # Markdown inside this div will inherit the color
+                                st.markdown("</div>", unsafe_allow_html=True)
+                            else:
+                                st.subheader(title)
+                                st.markdown(f"<div style='color: #1e293b;'>{content}</div>", unsafe_allow_html=True)
+                except:
+                    # Fallback if parsing fails
+                    st.markdown(f"<div style='color: #1e293b;'>{st.session_state.ai_report}</div>", unsafe_allow_html=True)
             
             st.markdown("---")
             
