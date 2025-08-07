@@ -71,50 +71,53 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 /* Consistent button styling - Black background with white text */
-.stButton>button {
-    background-color: #1e293b !important;
-    color: white !important;
+.stButton > button {
+    background: linear-gradient(135deg, #1e293b 0%, #334155 100%) !important;
+    color: #ffffff !important;
     border: none !important;
     border-radius: 12px !important;
     padding: 12px 24px !important;
     font-weight: 600 !important;
+    font-size: 14px !important;
     transition: all 0.3s ease !important;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1) !important;
     position: relative;
     overflow: hidden;
+    text-shadow: none !important;
 }
 
-.stButton>button:hover {
-    background-color: #334155 !important;
-    color: white !important;
-    transform: translateY(-3px) !important;
-    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15) !important;
+.stButton > button:hover {
+    background: linear-gradient(135deg, #334155 0%, #475569 100%) !important;
+    color: #ffffff !important;
+    transform: translateY(-2px) !important;
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2) !important;
 }
 
-.stButton>button:active {
-    background-color: #0f172a !important;
-    color: white !important;
-    transform: translateY(1px) !important;
+.stButton > button:active {
+    background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%) !important;
+    color: #ffffff !important;
+    transform: translateY(0px) !important;
 }
 
-/* Force all button text to be white */
-[data-testid="stButton"] button,
-[data-testid="stButton"] button p,
-[data-testid="stButton"] button span,
-[data-testid="stButton"] button div {
-    color: white !important;
-    background-color: #1e293b !important;
+/* Ensure button text is always white and visible */
+.stButton > button,
+.stButton > button *,
+.stButton > button p,
+.stButton > button span,
+.stButton > button div {
+    color: #ffffff !important;
+    text-shadow: none !important;
 }
 
-/* Primary button styling */
-[data-testid="stButton"] button[kind="primary"] {
-    background-color: #1e293b !important;
-    color: white !important;
+/* Primary button specific styling */
+button[kind="primary"] {
+    background: linear-gradient(135deg, #1e293b 0%, #334155 100%) !important;
+    color: #ffffff !important;
 }
 
-[data-testid="stButton"] button[kind="primary"]:hover {
-    background-color: #334155 !important;
-    color: white !important;
+button[kind="primary"]:hover {
+    background: linear-gradient(135deg, #334155 0%, #475569 100%) !important;
+    color: #ffffff !important;
 }
 
 .stButton>button:after {
