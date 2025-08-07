@@ -12,7 +12,7 @@ import altair as alt
 # Set page configuration
 st.set_page_config(
     page_title="AI SMART HOSPITAL",
-    page_icon="🏥",
+    page_icon="hi",
     layout="wide",
     initial_sidebar_state="expanded"
 )
