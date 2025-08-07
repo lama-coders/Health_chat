@@ -975,10 +975,13 @@ elif st.session_state.current_page == 'checkups':
                                 st.subheader(f"📋 {title}")
                                 st.markdown(f"<div style='color: #1e293b;'>{content}</div>", unsafe_allow_html=True)
                             elif "Critical Considerations" in title:
-                                st.markdown("<div style='padding: 16px; background: #fffbeb; border-radius: 12px; color: #1e293b;'>", unsafe_allow_html=True)
-                                st.subheader(f"⚠️ {title}")
-                                st.markdown(content) # Markdown inside this div will inherit the color
-                                st.markdown("</div>", unsafe_allow_html=True)
+                                # Combine everything into a single HTML block for proper styling
+                                st.markdown(f"""
+                                <div style='padding: 16px; background: #fffbeb; border-radius: 12px;'>
+                                    <h3 style='color: #1e293b;'>⚠️ {title}</h3>
+                                    <div style='color: #1e293b;'>{content}</div>
+                                </div>
+                                """, unsafe_allow_html=True)
                             else:
                                 st.subheader(title)
                                 st.markdown(f"<div style='color: #1e293b;'>{content}</div>", unsafe_allow_html=True)
