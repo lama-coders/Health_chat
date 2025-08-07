@@ -8,8 +8,6 @@ import time
 import random
 import pandas as pd
 import altair as alt
-import plotly.graph_objs as go
-from streamlit_extras.let_it_rain import rain
 
 # Set page configuration
 st.set_page_config(
