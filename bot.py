@@ -50,9 +50,10 @@ st.markdown("""
     padding: 1rem;
 }
 
-[data-testid="stVerticalBlock"] p,
-[data-testid="stVerticalBlock"] li,
-[data-testid="stVerticalBlock"] h3 {
+/* Style for text within the result containers, avoiding buttons */
+[data-testid="stVerticalBlock"] [data-testid="stMarkdownContainer"] p,
+[data-testid="stVerticalBlock"] [data-testid="stMarkdownContainer"] li,
+[data-testid="stVerticalBlock"] [data-testid="stMarkdownContainer"] h3 {
     color: var(--dark) !important;
 }
 
