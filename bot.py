@@ -70,53 +70,33 @@ h1, h2, h3, h4, h5, h6 {
     color: var(--dark) !important;
 }
 
-/* Consistent button styling - Black background with white text */
-.stButton > button {
-    background: linear-gradient(135deg, #1e293b 0%, #334155 100%) !important;
+/* SIMPLE BUTTON STYLING - Black background, white text */
+button {
+    background-color: #000000 !important;
     color: #ffffff !important;
-    border: none !important;
-    border-radius: 12px !important;
-    padding: 12px 24px !important;
-    font-weight: 600 !important;
-    font-size: 14px !important;
-    transition: all 0.3s ease !important;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1) !important;
-    position: relative;
-    overflow: hidden;
-    text-shadow: none !important;
+    border: 1px solid #333 !important;
+    border-radius: 8px !important;
+    padding: 0.5rem 1rem !important;
+    font-weight: 500 !important;
+    font-size: 1rem !important;
+    cursor: pointer !important;
 }
 
-.stButton > button:hover {
-    background: linear-gradient(135deg, #334155 0%, #475569 100%) !important;
-    color: #ffffff !important;
-    transform: translateY(-2px) !important;
-    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2) !important;
-}
-
-.stButton > button:active {
-    background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%) !important;
-    color: #ffffff !important;
-    transform: translateY(0px) !important;
-}
-
-/* Ensure button text is always white and visible */
-.stButton > button,
-.stButton > button *,
-.stButton > button p,
-.stButton > button span,
-.stButton > button div {
-    color: #ffffff !important;
-    text-shadow: none !important;
-}
-
-/* Primary button specific styling */
-button[kind="primary"] {
-    background: linear-gradient(135deg, #1e293b 0%, #334155 100%) !important;
+/* Make sure all text inside buttons is white */
+button, button * {
     color: #ffffff !important;
 }
 
-button[kind="primary"]:hover {
-    background: linear-gradient(135deg, #334155 0%, #475569 100%) !important;
+/* Keep the same style on hover */
+button:hover {
+    background-color: #000000 !important;
+    color: #ffffff !important;
+    opacity: 0.9 !important;
+}
+
+/* Keep the same style when active/clicked */
+button:active {
+    background-color: #000000 !important;
     color: #ffffff !important;
 }
 
