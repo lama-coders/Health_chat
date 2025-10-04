@@ -40,8 +40,7 @@ st.markdown("""
 }
 
 .stApp {
-    background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 50%, #dbeafe 100%);
-    min-height: 100vh;
+    background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
 }
 
 /* Style for calculator result containers */
@@ -61,7 +60,6 @@ st.markdown("""
 [data-testid="stMetricValue"] {
     color: var(--dark) !important;
 }
-
 [data-testid="stMetricLabel"] {
     color: var(--dark) !important;
 }
@@ -71,159 +69,14 @@ h1, h2, h3, h4, h5, h6 {
     color: var(--dark) !important;
 }
 
-/* SIMPLE BUTTON STYLING - Black background, white text */
-button {
-    background-color: #000000 !important;
-    color: #ffffff !important;
-    border: 1px solid #333 !important;
-    border-radius: 8px !important;
-    padding: 0.5rem 1rem !important;
-    font-weight: 500 !important;
-    font-size: 1rem !important;
-    cursor: pointer !important;
-}
-
-/* Make sure all text inside buttons is white */
-button, button * {
-    color: #ffffff !important;
-}
-
-/* Keep the same style on hover */
-button:hover {
-    background-color: #000000 !important;
-    color: #ffffff !important;
-    opacity: 0.9 !important;
-}
-
-/* Keep the same style when active/clicked */
-button:active {
-    background-color: #000000 !important;
-    color: #ffffff !important;
-}
-
-.stButton>button:after {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(255, 255, 255, 0.1);
-    transform: scale(0, 1);
-    transform-origin: top right;
-    transition: transform 0.5s;
-    z-index: 1;
-}
-
-.stButton>button:hover:after {
-    transform: scale(1, 1);
-    transform-origin: top left;
-}
-
-/* Primary buttons */
-.stButton>button:first-child:focus:not(:active) {
-    background: linear-gradient(135deg, var(--primary), var(--secondary)) !important;
-    color: white !important;
-}
-
-/* Secondary buttons */
-.stButton>button:not(:first-child) {
-    background: white !important;
-    color: var(--primary) !important;
-    border: 2px solid var(--primary) !important;
-}
-
-/* Containers */
-.stContainer {
-    border-radius: 16px;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-    background: white;
-    padding: 24px;
-    margin-bottom: 24px;
-}
-
-/* Tabs */
-.stTabs [data-baseweb="tab-list"] {
-    gap: 10px;
-}
-
-.stTabs [data-baseweb="tab"] {
-    border-radius: 12px !important;
-    padding: 12px 24px !important;
-    transition: all 0.3s ease !important;
-}
-
-.stTabs [aria-selected="true"] {
+/* Modern Streamlit button styling (scoped to Streamlit buttons only) */
+.stButton > button,
+.stDownloadButton > button {
     background: var(--primary) !important;
-    color: white !important;
-}
-
-/* Metrics */
-[data-testid="stMetricValue"] {
-    font-size: 1.8rem !important;
-    font-weight: 700 !important;
-}
-
-/* Progress bars */
-.stProgress > div > div > div {
-    background: linear-gradient(90deg, var(--primary), var(--accent)) !important;
-}
-
-/* Animation for loading */
-@keyframes pulse {
-    0% { transform: scale(1); opacity: 1; }
-    50% { transform: scale(1.05); opacity: 0.7; }
-    100% { transform: scale(1); opacity: 1; }
-}
-
-.pulse {
-    animation: pulse 2s infinite;
-}
-
-/* Floating animation */
-@keyframes float {
-    0% { transform: translateY(0px); }
-    50% { transform: translateY(-10px); }
-    100% { transform: translateY(0px); }
-}
-
-.floating {
-    animation: float 3s ease-in-out infinite;
-}
-
-/* Card styling with enhanced animations */
-.card {
-    border-radius: 20px;
-    box-shadow: 0 8px 32px rgba(37, 99, 235, 0.1);
-    background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
-    padding: 32px;
-    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-    height: 100%;
-    border: 1px solid rgba(37, 99, 235, 0.1);
-    position: relative;
-    overflow: hidden;
-}
-
-.card::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 4px;
-    background: linear-gradient(90deg, var(--hospital-accent), var(--hospital-blue));
-    transform: scaleX(0);
-    transition: transform 0.3s ease;
-}
-
-.card:hover {
-    transform: translateY(-8px) scale(1.02);
-    box-shadow: 0 20px 40px rgba(37, 99, 235, 0.2);
-    border-color: var(--hospital-accent);
-}
-
-.card:hover::before {
-    transform: scaleX(1);
+    color: #ffffff !important;
+    border: none !important;
+    border-radius: 10px !important;
+    padding: 0.6rem 1.1rem !important;
 }
 
 .card h3 {
@@ -241,80 +94,6 @@ button:active {
 .stTextInput > label {
     color: var(--dark) !important;
     font-weight: 600 !important;
-}
-
-/* Enhanced animations */
-@keyframes slideInUp {
-    from {
-        opacity: 0;
-        transform: translateY(30px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-@keyframes fadeInScale {
-    from {
-        opacity: 0;
-        transform: scale(0.9);
-    }
-    to {
-        opacity: 1;
-        transform: scale(1);
-    }
-}
-
-@keyframes shimmer {
-    0% { background-position: -200% 0; }
-    100% { background-position: 200% 0; }
-}
-
-/* Apply animations to elements */
-.stContainer, .card {
-    animation: slideInUp 0.6s ease-out;
-}
-
-/* Enhanced button animations */
-.stButton > button {
-    position: relative;
-    overflow: hidden;
-}
-
-.stButton > button::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: -100%;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-    transition: left 0.5s;
-}
-
-.stButton > button:hover::before {
-    left: 100%;
-}
-
-/* Loading animation for spinners */
-.stSpinner {
-    animation: pulse 1.5s ease-in-out infinite;
-}
-
-/* Enhanced metrics styling */
-[data-testid="stMetric"] {
-    background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
-    border-radius: 16px;
-    padding: 20px;
-    box-shadow: 0 4px 20px rgba(37, 99, 235, 0.1);
-    border: 1px solid rgba(37, 99, 235, 0.1);
-    transition: all 0.3s ease;
-}
-
-[data-testid="stMetric"]:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 30px rgba(37, 99, 235, 0.15);
 }
 
 
@@ -900,24 +679,16 @@ if st.session_state.current_page == 'home':
     </div>
     """, unsafe_allow_html=True)
     
-    # Feature cards with enhanced design
+    # Feature cards
     col1, col2 = st.columns(2)
     with col1:
         with st.container():
             st.markdown("""
-            <div class='card' style='background: linear-gradient(135deg, #ffffff 0%, #f0f9ff 100%); 
-                        border-left: 4px solid var(--hospital-accent);'>
-                <div class='card-icon' style='font-size: 3rem; color: var(--hospital-accent); 
-                            text-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);'>👨‍⚕️</div>
-                <h3 style='color: var(--hospital-blue); margin: 16px 0;'>Medical Checkups</h3>
-                <p style='color: #64748b; line-height: 1.6; margin-bottom: 16px;'>
-                    Consult with AI medical specialists for personalized health assessments and treatment plans.
-                </p>
-                <div style='background: rgba(37, 99, 235, 0.1); padding: 12px; border-radius: 8px; margin: 16px 0;'>
-                    <p style='margin: 0; font-weight: 600; color: var(--hospital-blue);'>
-                        <strong>Specialties:</strong> Physician, Nutritionist, Mental Health, Orthopedic, Dentist
-                    </p>
-                </div>
+            <div class='card'>
+                <div class='card-icon'>👨‍⚕️</div>
+                <h3>Medical Checkups</h3>
+                <p>Consult with AI medical specialists for personalized health assessments and treatment plans.</p>
+                <p><strong>Specialties:</strong> Physician, Nutritionist, Mental Health, Orthopedic, Dentist</p>
             </div>
             """, unsafe_allow_html=True)
             
@@ -930,19 +701,11 @@ if st.session_state.current_page == 'home':
     with col2:
         with st.container():
             st.markdown("""
-            <div class='card' style='background: linear-gradient(135deg, #ffffff 0%, #f0fdf4 100%); 
-                        border-left: 4px solid var(--hospital-success);'>
-                <div class='card-icon' style='font-size: 3rem; color: var(--hospital-success); 
-                            text-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);'>🔬</div>
-                <h3 style='color: var(--hospital-success); margin: 16px 0;'>Medical Lab</h3>
-                <p style='color: #64748b; line-height: 1.6; margin-bottom: 16px;'>
-                    Access advanced health calculators and analytics tools to monitor your wellness metrics.
-                </p>
-                <div style='background: rgba(16, 185, 129, 0.1); padding: 12px; border-radius: 8px; margin: 16px 0;'>
-                    <p style='margin: 0; font-weight: 600; color: var(--hospital-success);'>
-                        <strong>Tools:</strong> BMI Calculator, Body Fat %, Calorie Needs, Health Analytics
-                    </p>
-                </div>
+            <div class='card'>
+                <div class='card-icon'>🔬</div>
+                <h3>Medical Lab</h3>
+                <p>Access advanced health calculators and analytics tools to monitor your wellness metrics.</p>
+                <p><strong>Tools:</strong> BMI Calculator, Body Fat %, Calorie Needs, Health Analytics</p>
             </div>
             """, unsafe_allow_html=True)
             
@@ -1189,7 +952,7 @@ elif st.session_state.current_page == 'checkups':
                         use_container_width=True
                     )
     
-    # New consultation button with improved design
+    # New consultation button
     st.markdown("---")
     if st.button("🔄 Start New Consultation", help="Start a new consultation with the same specialist", use_container_width=True):
         # Use a flag to trigger reset at the top of the script
