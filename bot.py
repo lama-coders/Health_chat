@@ -1078,7 +1078,7 @@ elif st.session_state.current_page == 'checkups':
                         use_container_width=True
                     )
     
-    # New consultation button
+    # New consultation button with improved design
     st.markdown("---")
     if st.button("🔄 Start New Consultation", help="Start a new consultation with the same specialist", use_container_width=True):
         # Use a flag to trigger reset at the top of the script
@@ -1337,4 +1337,3 @@ elif st.session_state.current_page == 'lab':
     """)
 
     st.info("Check back soon for these new features!")
-
